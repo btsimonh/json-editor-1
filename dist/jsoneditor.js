@@ -1928,7 +1928,13 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
         this.input = this.theme.getRangeInput(min,max,step);
       }
-      // Source Code
+      // Range Input
+      else if(this.format === 'imageFile') {
+        this.input_type = 'file';
+
+        this.input = this.theme.getImageFile();
+        this.input.addEventListener("click",function(evt){alert("scripts work attached to jsoneditor");});
+      }      // Source Code
       else if([
           'actionscript',
           'batchfile',
@@ -4471,6 +4477,11 @@ JSONEditor.AbstractTheme = Class.extend({
   },
   getCheckbox: function() {
     return this.getFormInputField('checkbox');
+  },
+  getImageFile: function() {
+    var fileInput = this.getFormInputField('file');
+    fileInput.setAttribute("accept","image/*");
+    return fileInput;
   },
   getSelectInput: function(options) {
     var select = document.createElement('select');

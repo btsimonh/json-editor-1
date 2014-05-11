@@ -30,6 +30,12 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
     return "select";
   }
 });
+// Use the imageFile editor for all imageFIle types
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if(schema.type === 'imageFIle') {
+    return "imageFile";
+  }
+});
 // Use the multiple editor for schemas where the `type` is set to "any"
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   // If the schema can be of any type
