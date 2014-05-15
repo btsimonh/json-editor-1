@@ -46,6 +46,11 @@ JSONEditor.AbstractTheme = Class.extend({
     
     return el;
   },
+  getImageFile: function() {
+    var fileInput = this.getFormInputField('file');
+    fileInput.setAttribute("accept","image/*");
+    return fileInput;
+  },
   getCheckbox: function() {
     return this.getFormInputField('checkbox');
   },
