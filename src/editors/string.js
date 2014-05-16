@@ -155,13 +155,6 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
         this.input = this.theme.getRangeInput(min,max,step);
       }
-      // Range Input
-      else if(this.format === 'imageFile') {
-        this.input_type = 'file';
-
-        this.input = this.theme.getImageFile();
-        this.input.addEventListener("click",function(evt){alert("scripts work attached to jsoneditor");});
-      }
       // Source Code
       else if([
           'actionscript',
@@ -265,6 +258,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
         self.refreshValue();
         self.watch_listener();
+        console.log("notifying watchers of " + self.path);
         self.jsoneditor.notifyWatchers(self.path);
         if(self.parent) self.parent.onChildEditorChange(self);
         else self.jsoneditor.onChange();

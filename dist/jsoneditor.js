@@ -1933,13 +1933,6 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
         this.input = this.theme.getRangeInput(min,max,step);
       }
-      // Range Input
-      else if(this.format === 'imageFile') {
-        this.input_type = 'file';
-
-        this.input = this.theme.getImageFile();
-        this.input.addEventListener("click",function(evt){alert("scripts work attached to jsoneditor");});
-      }
       // Source Code
       else if([
           'actionscript',
@@ -2043,6 +2036,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
         self.refreshValue();
         self.watch_listener();
+        console.log("notifying watchers of " + self.path);
         self.jsoneditor.notifyWatchers(self.path);
         if(self.parent) self.parent.onChildEditorChange(self);
         else self.jsoneditor.onChange();
@@ -2930,13 +2924,14 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
         fileInput.setAttribute("accept","image/*");
         fileInput.setAttribute("class","hidden");
         var uuid = $uuid();
-        fileInput.id = uuid;
+        fileInput.setAttribute("id",uuid);
+        console.log("using latest jsoneditor #1");
         
         var labelElem = document.createElement('label');
         labelElem.setAttribute("for",uuid);
         var placeholderImg = document.createElement('img');
-        // 1px transparent image. stops us getting nasty broken image icons.
-        placeholderImg.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+        // An add-image image. stops us getting nasty broken image icons. This becomes a button.
+        placeholderImg.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBoZWlnaHQ9IjQ4cHgiIGlkPSJMYXllcl8xIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MTIgNTEyOyIgdmVyc2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgd2lkdGg9IjQ4cHgiIHhtbDpzcGFjZT0icHJlc2VydmUiPgogIDxnPgogICAgPGc+CiAgICAgIDxnPgogICAgICAgIDxwYXRoIGQ9Ik0yNTYgNDhDMTQxLjEgNDggNDggMTQxLjEgNDggMjU2czkzLjEgMjA4IDIwOCAyMDhjMTE0LjkgMCAyMDgtOTMuMSAyMDgtMjA4UzM3MC45IDQ4IDI1NiA0OHogTTI1NiA0NDYuNyBjLTEwNS4xIDAtMTkwLjctODUuNS0xOTAuNy0xOTAuN1MxNTAuOSA2NS4zIDI1NiA2NS4zUzQ0Ni43IDE1MC45IDQ0Ni43IDI1NlMzNjEuMSA0NDYuNyAyNTYgNDQ2Ljd6Ii8+CiAgICAgIDwvZz4KICAgIDwvZz4KICAgIDxnPgogICAgICA8cG9seWdvbiBwb2ludHM9IjI2NC4xLDEyOCAyNDcuMywxMjggMjQ3LjMsMjQ3LjkgMTI4LDI0Ny45IDEyOCwyNjQuNyAyNDcuMywyNjQuNyAyNDcuMywzODQgMjY0LjEsMzg0IDI2NC4xLDI2NC43IDM4NCwyNjQuNyAzODQsMjQ3LjkgMjY0LjEsMjQ3LjkiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=";
 
         labelElem.appendChild(placeholderImg);
         
@@ -3822,6 +3817,15 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
   }
 });
 
+JSONEditor.defaults.editors.arrayBase1 = JSONEditor.defaults.editors.array.extend({
+  getElementEditor: function(i) {
+    var superResult = this._super(i);
+    var item_info = this.getItemInfo(i);
+    superResult.schema.title = item_info.title +' '+ (i + 1);
+    superResult.header_text = item_info.title +' '+ (i + 1);
+    return superResult;
+  }
+});
 JSONEditor.defaults.editors.table = JSONEditor.defaults.editors.array.extend({
   addProperty: function() {
     this._super();
@@ -4804,11 +4808,6 @@ JSONEditor.AbstractTheme = Class.extend({
     }
     
     return el;
-  },
-  getImageFile: function() {
-    var fileInput = this.getFormInputField('file');
-    fileInput.setAttribute("accept","image/*");
-    return fileInput;
   },
   getCheckbox: function() {
     return this.getFormInputField('checkbox');
@@ -5960,7 +5959,7 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 });
 // Use the imageFile editor for all imageFIle types
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.type === 'imageFIle') {
+  if(schema.type === 'imageFile') {
     return "imageFile";
   }
 });

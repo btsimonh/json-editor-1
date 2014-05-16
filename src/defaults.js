@@ -32,7 +32,7 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 });
 // Use the imageFile editor for all imageFIle types
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.type === 'imageFIle') {
+  if(schema.type === 'imageFile') {
     return "imageFile";
   }
 });
