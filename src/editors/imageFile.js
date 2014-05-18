@@ -95,11 +95,11 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
         fileInput.setAttribute("class", "hidden");
         var uuid = $uuid();
         fileInput.setAttribute("id", uuid);
-        console.log("using latest jsoneditor #1");
 
         var labelElem = document.createElement('label');
         labelElem.setAttribute("for", uuid);
         var placeholderImg = document.createElement('img');
+        //TODO make this an option rather than a hard-coded image.
         // An add-image image. stops us getting nasty broken image icons. This becomes a button.
         placeholderImg.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBoZWlnaHQ9IjQ4cHgiIGlkPSJMYXllcl8xIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MTIgNTEyOyIgdmVyc2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiIgd2lkdGg9IjQ4cHgiIHhtbDpzcGFjZT0icHJlc2VydmUiPgogIDxnPgogICAgPGc+CiAgICAgIDxnPgogICAgICAgIDxwYXRoIGQ9Ik0yNTYgNDhDMTQxLjEgNDggNDggMTQxLjEgNDggMjU2czkzLjEgMjA4IDIwOCAyMDhjMTE0LjkgMCAyMDgtOTMuMSAyMDgtMjA4UzM3MC45IDQ4IDI1NiA0OHogTTI1NiA0NDYuNyBjLTEwNS4xIDAtMTkwLjctODUuNS0xOTAuNy0xOTAuN1MxNTAuOSA2NS4zIDI1NiA2NS4zUzQ0Ni43IDE1MC45IDQ0Ni43IDI1NlMzNjEuMSA0NDYuNyAyNTYgNDQ2Ljd6Ii8+CiAgICAgIDwvZz4KICAgIDwvZz4KICAgIDxnPgogICAgICA8cG9seWdvbiBwb2ludHM9IjI2NC4xLDEyOCAyNDcuMywxMjggMjQ3LjMsMjQ3LjkgMTI4LDI0Ny45IDEyOCwyNjQuNyAyNDcuMywyNjQuNyAyNDcuMywzODQgMjY0LjEsMzg0IDI2NC4xLDI2NC43IDM4NCwyNjQuNyAzODQsMjQ3LjkgMjY0LjEsMjQ3LjkiLz4KICAgIDwvZz4KICA8L2c+Cjwvc3ZnPgo=";
 
@@ -170,7 +170,11 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                 file = fileinput.files[0];
                 fr = new FileReader();
                 fr.onload = function(params) {
+                  // use the data URI as the result.
                   imgelem.src = fr.result;
+                  self.setValue(fr.result);
+                  
+                  //TODO: Move this to theme and make it more flexible.
                   imgelem.style.maxWidth = "25%";
                   imgelem.style.maxHeight = "25%";
                 };

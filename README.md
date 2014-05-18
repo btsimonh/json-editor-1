@@ -126,7 +126,7 @@ var editor = new JSONEditor(element, options);
 
 Here's an example using all the options:
 
-```js
+```javascript
 var editor = new JSONEditor(element, {
   schema: {
     type: "object",
@@ -170,7 +170,7 @@ var editor = new JSONEditor(element, {
 __*Note__ If the `ajax` property is `true` and JSON Editor needs to fetch an external url, the api methods won't be available immediately.
 Listen for the `ready` event before calling them.
 
-```js
+```javascript
 editor.on('ready',function() {
   // Now the api methods will be available
   editor.validate();
@@ -179,7 +179,7 @@ editor.on('ready',function() {
 
 ### Get/Set Value
 
-```js
+```javascript
 editor.setValue({name: "John Smith"});
 
 var value = editor.getValue();
@@ -188,7 +188,7 @@ console.log(value.name) // Will log "John Smith"
 
 Instead of getting/setting the value of the entire editor, you can also work on individual parts of the schema:
 
-```js
+```javascript
 // Get a reference to a node within the editor
 var name = editor.getEditor('root.name');
 
@@ -262,7 +262,7 @@ editor.unwatch('path.to.field',function_reference);
 
 This lets you disable editing for the entire form or part of the form.
 
-```js
+```javascript
 // Disable entire form
 editor.disable();
 
@@ -310,7 +310,7 @@ JSONEditor.defaults.theme = 'foundation5';
 
 You can override this default on a per-instance basis by passing a `theme` parameter in when initializing:
 
-```js
+```javascript
 var editor = new JSONEditor(element,{
   schema: schema,
   theme: 'jqueryui'
@@ -333,7 +333,7 @@ The supported icon libs are:
 
 By default, no icons are used. Just like the CSS theme, you can set the icon lib globally or when initializing:
 
-```js
+```javascript
 // Set the global default
 JSONEditor.defaults.iconlib = "bootstrap2";
 
@@ -398,7 +398,8 @@ Image, audio, and video links will display the media inline as well as providing
 Here are a couple examples:
 
 Simple text link
-```js+jinja
+
+```json
 {
   "title": "Blog Post Id",
   "type": "integer",
@@ -412,7 +413,7 @@ Simple text link
 ```
 
 Show a video preview (using HTML5 video)
-```js+jinja
+```json
 {
   "title": "Video filename",
   "type": "string",
@@ -465,6 +466,31 @@ Here is an example that will show a color picker in browsers that support it:
   }
 }
 ```
+#### Image File Editor
+
+You can add a picture selector by using a type of `imageFile` and a format of `imageFile`. The value will be a BASE64-encoded data URI.
+
+```json
+{
+"type": "imageFile" ,
+"format": "imageFile",
+"title": "Photo"
+}
+```
+
+This editor also provides a thumbnail preview. The generated HTML for the above is:
+```html
+<div class="image-upload" data-schemaformat="imageFile">
+<label for="39895787-b943-4f83-bc86-d21310d46e5f">
+<img src="data:image/svg+xml;base64,PHN2Zy...">
+</label>
+<input type="file" class="hidden" accept="image/*" id="39895787-b943-4f83-bc86-d21310d46e5f">
+</div>
+```
+
+The `id` attribute of the `input` field is an auto-generated unique ID, so that the label can also be attached. This makes formatting with CSS much simpler, since `input type=file` items are notoriously awkward to style (see [this stackoverflow article](http://stackoverflow.com/a/18803568/956779)). This enables you to hide the `input type=file` element with CSS, and use the placeholder `img` as a button (since it is part of the `label`).
+
+The `img` element initially contains a placeholder image, which will be replaced with the image thumbnail. Currently this is hard-coded; it needs to be made more configurable.
 
 #### Specialized String Editors
 
@@ -568,7 +594,7 @@ You can use the hyper-schema keyword `media` instead of `format` too if you pref
 
 You can override the default Ace theme by setting the `JSONEditor.plugins.ace.theme` variable.
 
-```js
+```javascript
 JSONEditor.plugins.ace.theme = 'twilight';
 ```
 
@@ -596,6 +622,36 @@ Here's an example of the `table` format:
     }
   }
 }
+```
+
+#### Image File Arrays
+
+There is also an `imageFileArray` type; at the moment it doesn't do anything special but in future it will provide an array editor that is more customized to the task of adding and removing images.
+
+You can pass in some additional options:
+
+Option                 | Effect                                       | Default
+-----------------------|----------------------------------------------|--------
+noMoveButtons          | Suppress "move up" and "move down" buttons.  | false
+noDeleteLastRowButton  | Suppress "delete last" button.               | false
+noDeleteAllButton      | Suppress "delete all" button.                | false
+
+##### Image File Array Example
+
+```json
+        "Photos": {
+          "type": "imageFileArray",
+          "compact":"true",
+          "title": "Attach Photos",
+          "noDeleteLastRowButton":"true",
+          "noDeleteAllButton":"true",
+          "noMoveButtons":"true",
+          "items": {
+            "type": "imageFile" ,
+            "format": "imageFile",
+            "title": "Photo"
+          }
+        }
 ```
 
 Editor Options
@@ -707,7 +763,7 @@ JSONEditor.defaults.template = 'handlebars';
 
 You can set the template engine on a per-instance basis as well:
 
-```js
+```javascript
 var editor = new JSONEditor(element,{
   schema: schema,
   template: 'hogan'
@@ -716,7 +772,7 @@ var editor = new JSONEditor(element,{
 
 Here is the completed `full_name` example using the default barebones template engine:
 
-```js+jinja
+```javascript
 {
   "type": "object",
   "properties": {
@@ -792,7 +848,7 @@ This is the most basic usage of `enumSource`.  The more verbose form of this pro
 filtering, pulling from multiple sources, constant values, etc..
 Here's a more complex example (this uses the Swig template engine syntax to show some advanced features)
 
-```js+jinja
+```javascript
 {
   // An array of sources
   "enumSource": [
@@ -819,7 +875,7 @@ Here's a more complex example (this uses the Swig template engine syntax to show
 The colors examples used an array of strings directly.  Using the verbose form, you can 
 also make it work with an array of objects.  Here's an example:
 
-```js+jinja
+```javascript
 {
   "type": "object",
   "properties": {
@@ -859,7 +915,7 @@ It would be much nicer if the headers could be dynamic and incorporate informati
 
 To accomplish this, use the `headerTemplate` property.  All of the watched variables are passed into this template, along with the static title `title` (e.g. "Child"), the index `i` (e.g. "0" and "1"), and the field's value `self` (e.g. `{"name": "John", "age": 9}`).
 
-```js+jinja
+```json
 {
   "type": "array",
   "title": "Children",
@@ -880,7 +936,7 @@ To accomplish this, use the `headerTemplate` property.  All of the watched varia
 If one of the included template engines isn't sufficient, 
 you can use any custom template engine with a `compile` method.  For example:
 
-```js
+```javascript
 var myengine = {
   compile: function(template) {
     // Compile should return a render function
@@ -914,7 +970,7 @@ JSON Editor uses resolver functions to determine which editor interface to use f
 
 Let's say you make a custom `location` editor for editing geo data.  You can add a resolver function to use this custom editor when appropriate. For example:
 
-```js
+```javascript
 // Add a resolver function to the beginning of the resolver list
 // This will make it run before any other ones
 JSONEditor.defaults.resolvers.unshift(function(schema) {
@@ -964,7 +1020,7 @@ JSON Editor provides a hook into the validation engine for adding your own custo
 
 Let's say you want to force all schemas with `format` set to `date` to match the pattern `YYYY-MM-DD`.
 
-```js
+```javascript
 // Custom validators must return an array of errors or an empty array if valid
 JSONEditor.defaults.custom_validators.push(function(schema, value, path) {
   var errors = [];
@@ -989,7 +1045,7 @@ __*WARNING__: This style of usage is deprecated and may not be supported in futu
 
 When jQuery (or Zepto) is loaded on the page, you can use JSON Editor like a normal jQuery plugin if you prefer.
 
-```js
+```javascript
 $("#editor_holder")
   .jsoneditor({
     schema: {},
