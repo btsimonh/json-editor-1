@@ -19,6 +19,20 @@ JSONEditor.plugins = {
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(typeof schema.type !== "string") return "multiple";
 });
+// Use the geolocation editor for all geolocation types
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if(schema.type === 'geolocation' && schema.format === 'geolocation') {
+    return "geolocation";
+  }
+});
+// Use the imageFile editor for all imageFIle types
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if(schema.type === 'string' && schema.format === 'imageFile') {
+    return "imageFile";
+  } else {
+    console.log("schema.type is " + schema.type + "; schema.format is " + schema.format);
+  }
+});
 // If the type is set and it's a basic type, use the primitive editor
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   // If the schema is a simple type
@@ -28,12 +42,6 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'boolean') {
     return "select";
-  }
-});
-// Use the imageFile editor for all imageFIle types
-JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.type === 'imageFile') {
-    return "imageFile";
   }
 });
 // Use the multiple editor for schemas where the `type` is set to "any"
