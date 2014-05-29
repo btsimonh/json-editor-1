@@ -3987,7 +3987,7 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
 
         var labelElem = document.createElement('label');
         labelElem.setAttribute("for", uuid);
-        
+
         var labelTextNode = document.createTextNode("");
         labelElem.appendChild(labelTextNode);
 
@@ -3996,64 +3996,80 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
 
         this.input = divElem;
         this.input_type = 'hidden';
-        
-        var geolocAvailable = false;
-        
+
+        var geolocAvailable = false, needGeolocUpdate = false;
+
         if (typeof JutoCordovaBridge !== "undefined") {
-          
-           if (JutoCordovaBridge.deviceReady) {
-          
-             // see if we need to update the location
-             if (JutoCordovaBridge.locationFixObtained ) {
-          
+
+          if (JutoCordovaBridge.deviceReady) {
+
+            // flag geoloc as available; it will be handled by the native plugin.
+            geolocAvailable = true;
+
+            // see if we need to update the location
+            if (JutoCordovaBridge.locationFixObtained) {
+
               var currentTime = new Date();
               var differenceMilliseconds = currentTime - JutoCordovaBridge.lastLocationUpdateTime;
               var toleratedDifferenceMilliseconds = JutoCordovaBridge.locationUpdateFrequencySeconds * 1000;
               if (differenceMilliseconds > toleratedDifferenceMilliseconds) {
-          
                 // time for an update.
-                JutoCordovaBridge.updateCurrentPosition(function() {
-          
-                  // success callback.
-                  // update the label and hidden field value.
-                  labelTextNode.nodeValue = "Latitude/Longitude: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
-                  hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
-                  self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
-                  geolocAvailable = true;
-                  // return true, so that we get invoked if the position gets updated again.
-                  return true;
-                });
+                needGeolocUpdate = true;
               } else {
-          
+
                 // old location still valid.
-                geolocAvailable = true;
-                  labelTextNode.nodeValue = "Latitude/Longitude: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
-                  hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
-                  self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
+
+                labelTextNode.nodeValue = "Latitude/Longitude: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+                hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+                self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
               }
+            } else {
+              // we haven't yet obtained a fix. Let's add ourselves as a listener 
+              // for when the device is ready.
+              needGeolocUpdate = true;
             }
-             
-           }
+
+          } else {
+            // the device isn't ready yet. Add ourselves as a listener for the geoloc
+            // call that will be invoked when the device is ready.
+            needGeolocUpdate = true;
+          }
+
+          if (needGeolocUpdate) {
+            // OK for some reason (above), we need an update to geolocation
+            // The function below is a callback that will occur when it's done.
+            JutoCordovaBridge.updateCurrentPosition(function() {
+
+              // success callback.
+              // update the label and hidden field value.
+              labelTextNode.nodeValue = "Lat/Long: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+              hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+              self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
+              // return true, so that we get invoked if the position gets updated again.
+              return true;
+            });
+
+          }
         }
-          
+
         if (!geolocAvailable) {
-          
+
           // OK we haven't got it yet. Try navigator.geolocation.getCurrentPosition.
           navigator.geolocation.getCurrentPosition(function(pos) {
-          
+
             hiddenInput.value = pos.coords.latitude + "," + pos.coords.longitude;
-            labelTextNode.nodeValue = pos.coords.latitude + "," + pos.coords.longitude;
+            labelTextNode.nodeValue = "Lat/Long: " + pos.coords.latitude + "," + pos.coords.longitude;
             self.setValue(pos.coords.latitude + "," + pos.coords.longitude);
           },
-          function(err) {
-          
-            console.log("couldn't get position");
-          
-            console.log(err);
-          });
+                  function(err) {
+
+                    console.log("couldn't get position");
+
+                    console.log(err);
+                  });
         }
-        
-          
+
+
       }
     }
 
