@@ -480,17 +480,34 @@ You can add a picture selector by using a type of `imageFile` and a format of `i
 
 This editor also provides a thumbnail preview. The generated HTML for the above is:
 ```html
-<div class="image-upload" data-schemaformat="imageFile">
-<label for="39895787-b943-4f83-bc86-d21310d46e5f">
-<img src="data:image/svg+xml;base64,PHN2Zy...">
-</label>
-<input type="file" class="hidden" accept="image/*" id="39895787-b943-4f83-bc86-d21310d46e5f">
-</div>
+    <div class="image-upload" data-schemaformat="imageFile">
+        <label for="39895787-b943-4f83-bc86-d21310d46e5f">
+        <img src="data:image/svg+xml;base64,PHN2Zy...">
+       </label>
+        <input type="file" class="hidden" accept="image/*" id="39895787-b943-4f83-bc86-d21310d46e5f">
+    </div>
 ```
 
 The `id` attribute of the `input` field is an auto-generated unique ID, so that the label can also be attached. This makes formatting with CSS much simpler, since `input type=file` items are notoriously awkward to style (see [this stackoverflow article](http://stackoverflow.com/a/18803568/956779)). This enables you to hide the `input type=file` element with CSS, and use the placeholder `img` as a button (since it is part of the `label`).
 
 The `img` element initially contains a placeholder image, which will be replaced with the image thumbnail. Currently this is hard-coded; it needs to be made more configurable.
+
+#### Autocomplete
+
+This is a string editor that provides autocomplete functionality. It relies on JQuery and JQueryUI.
+
+```json
+        "favouriteBeatle": {
+          "type": "string",
+          "title": "Name of Favourite Beatle",
+          "required": true,
+          "autocomplete": true,
+          "autocompleteData": ["John Lennon",
+                               "George Harrison",
+                               "Paul McCartney",
+                               "Ringo Starr"]
+
+```
 
 #### Specialized String Editors
 

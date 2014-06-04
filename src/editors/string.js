@@ -236,7 +236,14 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       this.always_disabled = true;
       this.input.disabled = true;
     }
-
+    if (this.schema.autocomplete) {
+      if (typeof $ !== "undefined") { // if we have jquery
+        // attach autocomplete data
+        if (this.schema.autocompleteData) {
+          $(this.input).autocomplete({"source": this.schema.autocompleteData});
+        }
+      }
+    }
     this.input
       .addEventListener('change',function(e) {        
         e.preventDefault();
