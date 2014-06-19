@@ -137,7 +137,8 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
           } else {
             // the device isn't ready yet. Add ourselves as a listener for the geoloc
             // call that will be invoked when the device is ready.
-            needGeolocUpdate = true;
+            
+
           }
 
           if (needGeolocUpdate) {
