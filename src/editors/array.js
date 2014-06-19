@@ -188,7 +188,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
   getElementEditor: function(i) {
     var item_info = this.getItemInfo(i);
     var schema = this.getItemSchema(i);
-    schema.title = item_info.title+' '+i;
+    schema.title = item_info.title+' '+(i+1);
 
     var editor = this.jsoneditor.getEditorClass(schema, this.jsoneditor);
 

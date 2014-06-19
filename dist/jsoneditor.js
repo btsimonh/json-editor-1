@@ -3415,7 +3415,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
   getElementEditor: function(i) {
     var item_info = this.getItemInfo(i);
     var schema = this.getItemSchema(i);
-    schema.title = item_info.title+' '+i;
+    schema.title = item_info.title+' '+(i+1);
 
     var editor = this.jsoneditor.getEditorClass(schema, this.jsoneditor);
 
@@ -4039,7 +4039,8 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
           } else {
             // the device isn't ready yet. Add ourselves as a listener for the geoloc
             // call that will be invoked when the device is ready.
-            needGeolocUpdate = true;
+            
+
           }
 
           if (needGeolocUpdate) {
@@ -5677,7 +5678,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   },
   getTextareaInput: function() {
     var el = document.createElement('textarea');
-    el.className = 'form-control needsclick';
+    el.className = 'form-control';
     return el;
   },
   getRangeInput: function(min, max, step) {
@@ -5686,7 +5687,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   },
   getFormInputField: function(type) {
     var el = this._super(type);
-    el.className += 'form-control needsclick';
+    el.className += 'form-control';
     return el;
   },
   getFormControl: function(label, input, description) {
