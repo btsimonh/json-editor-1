@@ -30,7 +30,6 @@ module.exports = function(grunt) {
           'src/editors/object.js',
           'src/editors/imageFile.js',
           'src/editors/array.js',
-          'src/editors/arrayBase1.js',
           'src/editors/geolocation.js',
           'src/editors/imageFileArray.js',
           'src/editors/table.js',
