@@ -3018,7 +3018,13 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                 fr.onload = function(params) {
                   // use the data URI as the result.
                   imgelem.src = fr.result;
-                  self.setValue(fr.result);
+                  // the value will be an object, with the dataURI and metadata
+                  // set it up once the thumbnail has been loaded.
+                  var imageObj = new Image();
+                  imageObj.onload = function() {
+                    self.setValue({"dataURI": this.src, "width" : this.width, "height" : this.height});
+                  };
+                  imageObj.src = fr.result;
                   
                   //TODO: Move this to theme and make it more flexible.
                   imgelem.style.maxWidth = "25%";
