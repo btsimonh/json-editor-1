@@ -4311,7 +4311,7 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
   }
 });
 
-JSONEditor.defaults.editors.imageFileArray = JSONEditor.defaults.editors.arrayBase1.extend({
+JSONEditor.defaults.editors.imageFileArray = JSONEditor.defaults.editors.array.extend({
   addControls: function() {
     return this._super();
   }
