@@ -176,7 +176,15 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                   // set it up once the thumbnail has been loaded.
                   var imageObj = new Image();
                   imageObj.onload = function() {
-                    self.setValue({"dataURI": this.src, "width" : this.width, "height" : this.height});
+                    self.setValue({
+                      "dataURI": this.src, 
+                      "width" : this.width, 
+                      "height" : this.height,
+                      "name": file.name,
+                      "size": file.size,
+                      "type": file.type,
+                      "lastModificationDate": file.lastModifiedDate
+                    });
                   };
                   imageObj.src = fr.result;
                   
