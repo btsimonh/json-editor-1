@@ -3022,7 +3022,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                   // set it up once the thumbnail has been loaded.
                   var imageObj = new Image();
                   imageObj.onload = function() {
-                    self.setValue({
+                    var valueObj = {
                       "dataURI": this.src, 
                       "width" : this.width, 
                       "height" : this.height,
@@ -3030,7 +3030,14 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                       "size": file.size,
                       "type": file.type,
                       "lastModificationDate": file.lastModifiedDate
-                    });
+                    };
+                    // if filename doesn't have an extension, try to derive one from the file type
+                    if (file.name.indexOf(".") === -1) {
+                      if (file.type.indexOf("/") !== -1) {
+                        valueObj.name += "." + file.type.split("/")[1];
+                      }
+                    }
+                    self.setValue(valueObj);
                   };
                   imageObj.src = fr.result;
                   
