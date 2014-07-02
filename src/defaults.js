@@ -41,7 +41,11 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 // Use the select editor for all boolean values
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'boolean') {
-    return "select";
+    if (schema.format === 'checkbox') {
+      return "checkbox";
+    } else {
+      return "select";
+    }
   }
 });
 // Use the multiple editor for schemas where the `type` is set to "any"

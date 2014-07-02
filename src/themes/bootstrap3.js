@@ -33,7 +33,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
 
     if(label && input.getAttribute('type') === 'checkbox') {
       group.className += ' checkbox';
-      label.appendChild(input)
+      label.appendChild(input);
       group.appendChild(label);
     } 
     else {

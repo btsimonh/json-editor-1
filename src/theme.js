@@ -46,8 +46,14 @@ JSONEditor.AbstractTheme = Class.extend({
     
     return el;
   },
-  getCheckbox: function() {
-    return this.getFormInputField('checkbox');
+  getCheckbox: function(name, checked) {
+    var checkbox = this.getFormInputField('checkbox');
+    checkbox.setAttribute("name",name);
+    checkbox.setAttribute("value","true");
+    if (checked) {
+      checkbox.setAttribute("checked",false); 
+    }
+    return checkbox;
   },
   getSelectInput: function(options) {
     var select = document.createElement('select');

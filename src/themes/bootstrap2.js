@@ -39,7 +39,6 @@ JSONEditor.defaults.themes.bootstrap2 = JSONEditor.AbstractTheme.extend({
     controls.className = 'controls';
 
     if(label && input.getAttribute('type') === 'checkbox') {
-      ret.appendChild(controls);
       label.className += ' checkbox';
       label.appendChild(input);
       controls.appendChild(label);
@@ -50,8 +49,8 @@ JSONEditor.defaults.themes.bootstrap2 = JSONEditor.AbstractTheme.extend({
         ret.appendChild(label);
       }
       controls.appendChild(input);
-      ret.appendChild(controls);
     }
+      ret.appendChild(controls);
 
     if(description) controls.appendChild(description);
 

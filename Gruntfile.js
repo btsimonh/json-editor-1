@@ -35,6 +35,7 @@ module.exports = function(grunt) {
           'src/editors/table.js',
           'src/editors/multiple.js',
           'src/editors/enum.js',
+          'src/editors/checkbox.js', 
           'src/editors/select.js',
           
           // All the themes and iconlibs
