@@ -25,15 +25,21 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   },
   getFormInputField: function(type) {
     var el = this._super(type);
-    el.className += 'form-control';
+    if (type !== "checkbox") {
+      el.className += 'form-control';
+    }
     return el;
   },
   getFormControl: function(label, input, description) {
     var group = document.createElement('div');
 
     if(label && input.getAttribute('type') === 'checkbox') {
-      group.className += ' checkbox';
+      label.className += ' checkbox';
       label.appendChild(input);
+      // add an empty span inside the label, alongside the checkbox.
+      var emptySpan = document.createElement('span');
+      emptySpan.setAttribute('class','checkbox-target')
+      label.appendChild(emptySpan);
       group.appendChild(label);
     } 
     else {
