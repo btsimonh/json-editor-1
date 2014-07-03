@@ -180,9 +180,9 @@ JSONEditor.Validator = Class.extend({
     }
   },
   validate: function(value) {
-    return this._validateSchema(this.schema, value);
+    return this._validateSchema(this.schema, value, 'root', value);
   },
-  _validateSchema: function(schema,value,path) {
+  _validateSchema: function(schema,value,path,fullSchemaValue) {
     var errors = [];
     var valid, i, j;
     var stringified = JSON.stringify(value);
@@ -243,14 +243,14 @@ JSONEditor.Validator = Class.extend({
     // `extends` (version 3)
     if(schema.extends) {
       for(i=0; i<schema.extends.length; i++) {
-        errors = errors.concat(this._validateSchema(schema.extends[i],value,path));
+        errors = errors.concat(this._validateSchema(schema.extends[i],value,path,fullSchemaValue));
       }
     }
 
     // `allOf`
     if(schema.allOf) {
       for(i=0; i<schema.allOf.length; i++) {
-        errors = errors.concat(this._validateSchema(schema.allOf[i],value,path));
+        errors = errors.concat(this._validateSchema(schema.allOf[i],value,path,fullSchemaValue));
       }
     }
 
@@ -258,7 +258,7 @@ JSONEditor.Validator = Class.extend({
     if(schema.anyOf) {
       valid = false;
       for(i=0; i<schema.anyOf.length; i++) {
-        if(!this._validateSchema(schema.anyOf[i],value,path).length) {
+        if(!this._validateSchema(schema.anyOf[i],value,path,fullSchemaValue).length) {
           valid = true;
           break;
         }
@@ -278,7 +278,7 @@ JSONEditor.Validator = Class.extend({
       var oneof_errors = [];
       for(i=0; i<schema.oneOf.length; i++) {
         // Set the error paths to be path.oneOf[i].rest.of.path
-        var tmp = this._validateSchema(schema.oneOf[i],value,path);
+        var tmp = this._validateSchema(schema.oneOf[i],value,path,fullSchemaValue);
         if(!tmp.length) {
           valid++;
         }
@@ -302,7 +302,7 @@ JSONEditor.Validator = Class.extend({
 
     // `not`
     if(schema.not) {
-      if(!this._validateSchema(schema.not,value,path).length) {
+      if(!this._validateSchema(schema.not,value,path,fullSchemaValue).length) {
         errors.push({
           path: path,
           property: 'not',
@@ -473,7 +473,7 @@ JSONEditor.Validator = Class.extend({
             // If this item has a specific schema tied to it
             // Validate against it
             if(schema.items[i]) {
-              errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i,fullSchemaValue));
             }
             // If all additional items are allowed
             else if(schema.additionalItems === true) {
@@ -482,7 +482,7 @@ JSONEditor.Validator = Class.extend({
             // If additional items is a schema
             // TODO: Incompatibility between version 3 and 4 of the spec
             else if(schema.additionalItems) {
-              errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i,fullSchemaValue));
             }
             // If no additional items are allowed
             else if(schema.additionalItems === false) {
@@ -503,7 +503,7 @@ JSONEditor.Validator = Class.extend({
         else {
           // Each item in the array must validate against the schema
           for(i=0; i<value.length; i++) {
-            errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i));
+            errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i,fullSchemaValue));
           }
         }
       }
@@ -600,7 +600,7 @@ JSONEditor.Validator = Class.extend({
         for(i in schema.properties) {
           if(!schema.properties.hasOwnProperty(i)) continue;
           validated_properties[i] = true;
-          errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i));
+          errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i,fullSchemaValue));
         }
       }
 
@@ -616,7 +616,7 @@ JSONEditor.Validator = Class.extend({
             if(!value.hasOwnProperty(j)) continue;
             if(regex.test(j)) {
               validated_properties[j] = true;
-              errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j));
+              errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j,fullSchemaValue));
             }
           }
         }
@@ -648,7 +648,7 @@ JSONEditor.Validator = Class.extend({
             // Must match schema
             // TODO: incompatibility between version 3 and 4 of the spec
             else {
-              errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i));
+              errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i,fullSchemaValue));
             }
           }
         }
@@ -676,7 +676,7 @@ JSONEditor.Validator = Class.extend({
           }
           // Schema dependency
           else {
-            errors = errors.concat(this._validateSchema(schema.dependencies[i],value,path));
+            errors = errors.concat(this._validateSchema(schema.dependencies[i],value,path,fullSchemaValue));
           }
         }
       }
@@ -684,7 +684,7 @@ JSONEditor.Validator = Class.extend({
 
     // Custom type validation
     $each(JSONEditor.defaults.custom_validators,function(i,validator) {
-      errors = errors.concat(validator(schema,value,path));
+      errors = errors.concat(validator(schema,value,path, fullSchemaValue));
     });
 
     return errors;
