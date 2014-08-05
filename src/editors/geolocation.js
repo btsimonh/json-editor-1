@@ -138,6 +138,13 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
             // the device isn't ready yet. Add ourselves as a listener for the geoloc
             // call that will be invoked when the device is ready.
             
+            // Are we in a cordova device that we can detect? Because we *REALLY*
+            //  don't want to fall back to web, we'd get a nasty alert message.
+            var app = document.URL.indexOf( 'http://' ) === -1 && document.URL.indexOf( 'https://' ) === -1;
+
+            if (app ) { // we are in an app.
+              geolocAvailable = true; // assume that cordova plugins WILL work, they just haven't yet.
+            }
 
           }
 
