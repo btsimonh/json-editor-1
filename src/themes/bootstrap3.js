@@ -2,8 +2,11 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   getSelectInput: function(options) {
     var el = this._super(options);
     el.className += 'form-control';
-    el.style.width = 'auto';
+    //el.style.width = 'auto';
     return el;
+  },
+  setGridColumnSize: function(el,size) {
+    el.className = 'col-md-'+size;
   },
   afterInputReady: function(input) {
     if(input.controlgroup) return;
@@ -25,7 +28,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   },
   getFormInputField: function(type) {
     var el = this._super(type);
-    if (type !== "checkbox") {
+    if(type !== 'checkbox') {
       el.className += 'form-control';
     }
     return el;
@@ -38,9 +41,11 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
       label.appendChild(input);
       // add an empty span inside the label, alongside the checkbox.
       var emptySpan = document.createElement('span');
-      emptySpan.setAttribute('class','checkbox-target')
+      emptySpan.setAttribute('class','checkbox-target');
       label.appendChild(emptySpan);
       group.appendChild(label);
+      input.style.position = 'relative';
+      input.style.cssFloat = 'left';
     } 
     else {
       group.className += ' form-group';
@@ -109,8 +114,9 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     input.controlgroup.className = input.controlgroup.className.replace(/\s?has-error/g,'');
   },
   getTabHolder: function() {
-    var el = this._super();
-    el.children[0].className += ' list-group';
+    var el = document.createElement('div');
+    el.innerHTML = "<div class='tabs list-group col-md-2'></div><div class='col-md-10'></div>";
+    el.className = 'rows';
     return el;
   },
   getTab: function(text) {

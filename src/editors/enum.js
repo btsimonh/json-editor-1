@@ -1,21 +1,11 @@
 // Enum Editor (used for objects and arrays with enumerated values)
 JSONEditor.defaults.editors.enum = JSONEditor.AbstractEditor.extend({
-  getDefault: function() {
-    return this.schema.enum[0];
-  },
-  addProperty: function() {
-    this._super();
-    this.display_area.style.display = '';
-    this.theme.enableHeader(this.title);
-  },
-  removeProperty: function() {
-    this._super();
-    this.display_area.style.display = 'none';
-    this.theme.disableHeader(this.title);
+  getNumColumns: function() {
+    return 4;
   },
   build: function() {
     var container = this.getContainer();
-    this.title = this.getTheme().getHeader(this.getTitle());
+    this.title = this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
     this.container.appendChild(this.title);
 
     this.options.enum_titles = this.options.enum_titles || [];
@@ -32,13 +22,17 @@ JSONEditor.defaults.editors.enum = JSONEditor.AbstractEditor.extend({
     }
 
     // Switcher
-    this.switcher = this.theme.getSelectInput(this.select_options);
+    this.switcher = this.theme.getSwitcher(this.select_options);
     this.container.appendChild(this.switcher);
-    this.switcher.style.float = 'right';
+    this.switcher.style.width = 'auto';
+    this.switcher.style.display = 'inline-block';
+    this.switcher.style.marginLeft = '5px';
     this.switcher.style.marginBottom = 0;
 
     // Display area
     this.display_area = this.theme.getIndentedPanel();
+    this.display_area.style.paddingTop = 0;
+    this.display_area.style.paddingBottom = 0;
     this.container.appendChild(this.display_area);
 
     this.switcher.addEventListener('change',function() {
@@ -51,7 +45,6 @@ JSONEditor.defaults.editors.enum = JSONEditor.AbstractEditor.extend({
     });
     this.value = this.enum[0];
     this.refreshValue();
-    this.jsoneditor.notifyWatchers(this.path);
 
     if(this.enum.length === 1) this.switcher.style.display = 'none';
   },
@@ -97,17 +90,17 @@ JSONEditor.defaults.editors.enum = JSONEditor.AbstractEditor.extend({
         var html = self.getHTML(child);
 
         // Add the keys to object children
-        if(!(el instanceof Array)) {
+        if(!(Array.isArray(el))) {
           // TODO: use theme
-          html = '<div><strong>'+i+'</strong>: '+html+'</div>';
+          html = '<div><em>'+i+'</em>: '+html+'</div>';
         }
 
         // TODO: use theme
         ret += '<li>'+html+'</li>';
       });
       
-      if(el instanceof Array) ret = '<ol>'+ret+'</ol>';
-      else ret = "<ul>"+ret+'</ul>';
+      if(Array.isArray(el)) ret = '<ol>'+ret+'</ol>';
+      else ret = "<ul style='margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;'>"+ret+'</ul>';
 
       return ret;
     }
@@ -132,9 +125,9 @@ JSONEditor.defaults.editors.enum = JSONEditor.AbstractEditor.extend({
     }
   },
   destroy: function() {
-    this.display_area.parentNode.removeChild(this.display_area);
-    this.title.parentNode.removeChild(this.title);
-    this.switcher.parentNode.removeChild(this.switcher);
+    if(this.display_area && this.display_area.parentNode) this.display_area.parentNode.removeChild(this.display_area);
+    if(this.title && this.title.parentNode) this.title.parentNode.removeChild(this.title);
+    if(this.switcher && this.switcher.parentNode) this.switcher.parentNode.removeChild(this.switcher);
 
     this._super();
   }

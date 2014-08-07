@@ -1,6 +1,15 @@
 JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
-  getDefault: function() {
-    return this.schema.default || '';
+  register: function() {
+    this._super();
+    if (!this.input)
+      return;
+    this.input.setAttribute('name', this.formname);
+  },
+  unregister: function() {
+    this._super();
+    if (!this.input)
+      return;
+    this.input.removeAttribute('name');
   },
   setValue: function(value, initial, from_template) {
     var self = this;
@@ -45,6 +54,11 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
     this.refreshValue();
 
+    if (initial)
+      this.is_dirty = false;
+    else if (this.jsoneditor.options.show_errors === "change")
+      this.is_dirty = true;
+
     if (changed) {
       if (self.parent)
         self.parent.onChildEditorChange(self);
@@ -55,23 +69,22 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     this.watch_listener();
     this.jsoneditor.notifyWatchers(this.path);
   },
-  removeProperty: function() {
-    this._super();
-    this.input.style.display = 'none';
-    if (this.description)
-      this.description.style.display = 'none';
-    this.theme.disableLabel(this.label);
-  },
-  addProperty: function() {
-    this._super();
-    this.input.style.display = '';
-    if (this.description)
-      this.description.style.display = '';
-    this.theme.enableLabel(this.label);
+  getNumColumns: function() {
+    var min = Math.ceil(this.getTitle().length / 5);
+    var num;
+
+    if (this.input_type === 'textarea')
+      num = 6;
+    else if (['text', 'email'].indexOf(this.input_type) >= 0)
+      num = 4;
+    else
+      num = 2;
+
+    return Math.min(12, Math.max(min, num));
   },
   build: function() {
-    var self = this;
-    if (!this.getOption('compact', false))
+    var self = this, i;
+    if (!this.options.compact)
       this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
     if (this.schema.description)
       this.description = this.theme.getFormInputDescription(this.schema.description);
@@ -79,6 +92,114 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     this.format = this.schema.format;
     if (!this.format && this.schema.media && this.schema.media.type) {
       this.format = this.schema.media.type.replace(/(^(application|text)\/(x-)?(script\.)?)|(-source$)/g, '');
+    }
+    // Specific format
+    if (this.format && this.format === 'geolocation') {
+      var divElem = document.createElement('div');
+      divElem.setAttribute("class", "geolocation");
+
+      var hiddenInput = this.theme.getFormInputField('hidden');
+      var uuid = $uuid();
+      hiddenInput.setAttribute("id", uuid);
+
+      var labelElem = document.createElement('label');
+      labelElem.setAttribute("for", uuid);
+
+      var labelTextNode = document.createTextNode("");
+      labelElem.appendChild(labelTextNode);
+
+      divElem.appendChild(labelElem);
+      labelElem.appendChild(hiddenInput);
+
+      this.input = divElem;
+      this.input_type = 'hidden';
+
+      var geolocAvailable = false, needGeolocUpdate = false;
+
+      if (typeof JutoCordovaBridge !== "undefined") {
+
+        if (JutoCordovaBridge.deviceReady) {
+
+          // flag geoloc as available; it will be handled by the native plugin.
+          geolocAvailable = true;
+
+          // see if we need to update the location
+          if (JutoCordovaBridge.locationFixObtained) {
+
+            var currentTime = new Date();
+            var differenceMilliseconds = currentTime - JutoCordovaBridge.lastLocationUpdateTime;
+            var toleratedDifferenceMilliseconds = JutoCordovaBridge.locationUpdateFrequencySeconds * 1000;
+            if (differenceMilliseconds > toleratedDifferenceMilliseconds) {
+              // time for an update.
+              needGeolocUpdate = true;
+            } else {
+
+              // old location still valid.
+
+              labelTextNode.nodeValue = "Latitude/Longitude: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+              hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+              self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
+            }
+          } else {
+            // we haven't yet obtained a fix. Let's add ourselves as a listener 
+            // for when the device is ready.
+            needGeolocUpdate = true;
+          }
+
+        } else {
+          // the device isn't ready yet. Add ourselves as a listener for the geoloc
+          // call that will be invoked when the device is ready.
+
+          // Are we in a cordova device that we can detect? Because we *REALLY*
+          //  don't want to fall back to web, we'd get a nasty alert message.
+          var app = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+
+          if (app) { // we are in an app.
+            geolocAvailable = true; // assume that cordova plugins WILL work, they just haven't yet.
+          }
+
+        }
+
+        if (needGeolocUpdate) {
+          // OK for some reason (above), we need an update to geolocation
+          // The function below is a callback that will occur when it's done.
+          JutoCordovaBridge.updateCurrentPosition(function() {
+
+            // success callback.
+            // update the label and hidden field value.
+            labelTextNode.nodeValue = "Lat/Long: " + JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+            hiddenInput.value = JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude;
+            self.setValue(JutoCordovaBridge.latitude + "," + JutoCordovaBridge.longitude);
+            // return true, so that we get invoked if the position gets updated again.
+            return true;
+          });
+
+        }
+      }
+
+      if (!geolocAvailable) {
+
+        // OK we haven't got it yet. Try navigator.geolocation.getCurrentPosition.
+        navigator.geolocation.getCurrentPosition(function(pos) {
+
+          hiddenInput.value = pos.coords.latitude + "," + pos.coords.longitude;
+          labelTextNode.nodeValue = "Lat/Long: " + pos.coords.latitude + "," + pos.coords.longitude;
+          self.setValue(pos.coords.latitude + "," + pos.coords.longitude);
+        },
+                function(err) {
+
+                  console.log("couldn't get position");
+
+                  console.log(err);
+                });
+      }
+    }
+
+    if (!this.format && this.options.default_format) {
+      this.format = this.options.default_format;
+    }
+    if (this.options.format) {
+      this.format = this.options.format;
     }
 
     // Select box
@@ -94,7 +215,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       this.enumSource = [];
 
       // Shortcut declaration for using a single array
-      if (!(this.schema.enumSource instanceof Array)) {
+      if (!(Array.isArray(this.schema.enumSource))) {
         if (this.schema.enumValue) {
           this.enumSource = [
             {
@@ -112,7 +233,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         }
       }
       else {
-        for (var i = 0; i < this.schema.enumSource.length; i++) {
+        for (i = 0; i < this.schema.enumSource.length; i++) {
           // Shorthand for watched variable
           if (typeof this.schema.enumSource[i] === "string") {
             this.enumSource[i] = {
@@ -120,7 +241,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
             };
           }
           // Make a copy of the schema
-          else if (!(this.schema.enumSource[i] instanceof Array)) {
+          else if (!(Array.isArray(this.schema.enumSource[i]))) {
             this.enumSource[i] = $extend({}, this.schema.enumSource[i]);
           }
           else {
@@ -131,7 +252,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
       // Now, enumSource is an array of sources
       // Walk through this array and fix up the values
-      for (var i = 0; i < this.enumSource.length; i++) {
+      for (i = 0; i < this.enumSource.length; i++) {
         if (this.enumSource[i]) {
           this.enumSource[i].value = this.jsoneditor.compileTemplate(this.enumSource[i].value, this.template_engine);
         }
@@ -225,7 +346,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         this.input = this.theme.getTextareaInput();
       }
       // HTML5 Input type
-      else {
+      else if (this.format !== "geolocation") {
         this.input_type = this.format;
         this.input = this.theme.getFormInputField(this.input_type);
       }
@@ -244,7 +365,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     else if (typeof this.schema.minLength !== "undefined")
       this.input.setAttribute('pattern', '.{' + this.schema.minLength + ',}');
 
-    if (this.getOption('compact'))
+    if (this.options.compact)
       this.container.setAttribute('class', this.container.getAttribute('class') + ' compact');
 
     if (this.schema.readOnly || this.schema.readonly || this.schema.template) {
@@ -286,9 +407,10 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
                 this.value = sanitized;
               }
 
+              self.is_dirty = true;
+
               self.refreshValue();
               self.watch_listener();
-
               self.jsoneditor.notifyWatchers(self.path);
               if (self.parent)
                 self.parent.onChildEditorChange(self);
@@ -299,28 +421,30 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     if (this.format)
       this.input.setAttribute('data-schemaformat', this.format);
 
-    this.control = this.getTheme().getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description);
     this.container.appendChild(this.control);
 
     // If the Select2 library is loaded
-    if (this.input_type === "select" && window.$ && $.fn && $.fn.select2) {
-      $(this.input).select2();
+    if (this.input_type === "select" && window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+      window.jQuery(this.input).select2();
     }
 
     // Any special formatting that needs to happen after the input is added to the dom
-    requestAnimationFrame(function() {
-      self.afterInputReady();
+    window.requestAnimationFrame(function() {
+      // Skip in case the input is only a temporary editor,
+      // otherwise, in the case of an ace_editor creation,
+      // it will generate an error trying to append it to the missing parentNode
+      if (self.input.parentNode)
+        self.afterInputReady();
     });
 
     // Compile and store the template
     if (this.schema.template) {
       this.template = this.jsoneditor.compileTemplate(this.schema.template, this.template_engine);
       this.refreshValue();
-      this.jsoneditor.notifyWatchers(this.path);
     }
     else {
       this.refreshValue();
-      this.jsoneditor.notifyWatchers(this.path);
     }
   },
   enable: function() {
@@ -336,31 +460,35 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     this._super();
   },
   afterInputReady: function() {
-    var self = this;
+    var self = this, options;
 
     // Code editor
     if (this.source_code) {
       // WYSIWYG html and bbcode editor
-      if (this.options.wysiwyg
-              && ['html', 'bbcode'].indexOf(this.input_type) >= 0
-              && window.$ && $.fn && $.fn.sceditor
+      if (this.options.wysiwyg &&
+              ['html', 'bbcode'].indexOf(this.input_type) >= 0 &&
+              window.jQuery && window.jQuery.fn && window.jQuery.fn.sceditor
               ) {
-        $(self.input).sceditor({
+        options = $extend({}, {
           plugins: self.input_type === 'html' ? 'xhtml' : 'bbcode',
           emoticonsEnabled: false,
           width: '100%',
           height: 300
-        });
+        }, JSONEditor.plugins.sceditor);
 
-        self.sceditor_instance = $(self.input).sceditor('instance');
+        window.jQuery(self.input).sceditor(options);
+
+        self.sceditor_instance = window.jQuery(self.input).sceditor('instance');
 
         self.sceditor_instance.blur(function() {
           // Get editor's value
-          var val = $("<div>" + self.sceditor_instance.val() + "</div>");
+          var val = window.jQuery("<div>" + self.sceditor_instance.val() + "</div>");
           // Remove sceditor spans/divs
-          $('#sceditor-start-marker,#sceditor-end-marker,.sceditor-nlf', val).remove();
+          window.jQuery('#sceditor-start-marker,#sceditor-end-marker,.sceditor-nlf', val).remove();
           // Set the value and update
           self.input.value = val.html();
+          self.value = self.input.value;
+          self.is_dirty = true;
           if (self.parent)
             self.parent.onChildEditorChange(self);
           else
@@ -374,26 +502,26 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         this.input.parentNode.insertBefore(this.epiceditor_container, this.input);
         this.input.style.display = 'none';
 
-        var options = $extend({}, JSONEditor.plugins.epiceditor, {
+        options = $extend({}, JSONEditor.plugins.epiceditor, {
           container: this.epiceditor_container,
           clientSideStorage: false
         });
 
-        this.epiceditor = new EpicEditor(options);
+        this.epiceditor = new window.EpicEditor(options).load();
 
         this.epiceditor.importFile(null, this.getValue());
 
         this.epiceditor.on('update', function() {
           var val = self.epiceditor.exportFile();
           self.input.value = val;
+          self.value = val;
+          self.is_dirty = true;
           if (self.parent)
             self.parent.onChildEditorChange(self);
           else
             self.jsoneditor.onChange();
           self.jsoneditor.notifyWatchers(self.path);
         });
-
-        this.epiceditor.load();
       }
       // ACE editor for everything else
       else if (window.ace) {
@@ -409,7 +537,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         this.ace_container.style.height = '400px';
         this.input.parentNode.insertBefore(this.ace_container, this.input);
         this.input.style.display = 'none';
-        this.ace_editor = ace.edit(this.ace_container);
+        this.ace_editor = window.ace.edit(this.ace_container);
 
         this.ace_editor.setValue(this.getValue());
 
@@ -417,7 +545,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         if (JSONEditor.plugins.ace.theme)
           this.ace_editor.setTheme('ace/theme/' + JSONEditor.plugins.ace.theme);
         // The mode
-        var mode = ace.require("ace/mode/" + mode);
+        mode = window.ace.require("ace/mode/" + mode);
         if (mode)
           this.ace_editor.getSession().setMode(new mode.Mode());
 
@@ -426,6 +554,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
           var val = self.ace_editor.getValue();
           self.input.value = val;
           self.refreshValue();
+          self.is_dirty = true;
           if (self.parent)
             self.parent.onChildEditorChange(self);
           else
@@ -457,10 +586,11 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
 
     this.template = null;
-    this.input.parentNode.removeChild(this.input);
-    if (this.label)
+    if (this.input && this.input.parentNode)
+      this.input.parentNode.removeChild(this.input);
+    if (this.label && this.label.parentNode)
       this.label.parentNode.removeChild(this.label);
-    if (this.description)
+    if (this.description && this.description.parentNode)
       this.description.parentNode.removeChild(this.description);
 
     this._super();
@@ -475,22 +605,22 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
    * Re-calculates the value if needed
    */
   onWatchedFieldChange: function() {
-    var self = this;
+    var self = this, vars, j;
 
     // If this editor needs to be rendered by a macro template
     if (this.template) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       this.setValue(this.template(vars), false, true);
     }
     // If this editor uses a dynamic select box
     if (this.enumSource) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       var select_options = [];
       var select_titles = [];
 
       for (var i = 0; i < this.enumSource.length; i++) {
         // Constant values
-        if (this.enumSource[i] instanceof Array) {
+        if (Array.isArray(this.enumSource[i])) {
           select_options = select_options.concat(this.enumSource[i]);
           select_titles = select_titles.concat(this.enumSource[i]);
         }
@@ -505,8 +635,8 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
           // Filter the items
           if (this.enumSource[i].filter) {
             var new_items = [];
-            for (var j = 0; j < items.length; j++) {
-              if (filter({i: j, item: items[j]}))
+            for (j = 0; j < items.length; j++) {
+              if (this.enumSource[i].filter({i: j, item: items[j]}))
                 new_items.push(items[j]);
             }
             items = new_items;
@@ -514,7 +644,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 
           var item_titles = [];
           var item_values = [];
-          for (var j = 0; j < items.length; j++) {
+          for (j = 0; j < items.length; j++) {
             var item = items[j];
 
             // Rendered value
@@ -572,6 +702,13 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
   },
   showValidationErrors: function(errors) {
     var self = this;
+
+    if (this.jsoneditor.options.show_errors === "always") {
+    }
+    else if (!this.is_dirty)
+      return;
+
+
 
     var messages = [];
     $each(errors, function(i, error) {

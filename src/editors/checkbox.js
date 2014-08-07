@@ -92,7 +92,7 @@ JSONEditor.defaults.editors.checkbox = JSONEditor.AbstractEditor.extend({
       self.jsoneditor.notifyWatchers(self.path);
     });
 
-    this.control = this.getTheme().getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description);
     this.container.appendChild(this.control);
 
     self.theme.afterInputReady(self.input);

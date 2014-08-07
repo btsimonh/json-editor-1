@@ -312,15 +312,15 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
    */
   onWatchedFieldChange: function() {
     var self = this;
-
+    var vars;
     // If this editor needs to be rendered by a macro template
     if (this.template) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       this.setValue(this.template(vars), false, true);
     }
     // If this editor uses a dynamic select box
     if (this.enumSource) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       var select_options = [];
       var select_titles = [];
 
@@ -333,6 +333,7 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
         // A watched field
         else if (vars[this.enumSource[i].source]) {
           var items = vars[this.enumSource[i].source];
+          var j;
 
           // Only use a predefined part of the array
           if (this.enumSource[i].slice) {
@@ -341,7 +342,7 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
           // Filter the items
           if (this.enumSource[i].filter) {
             var new_items = [];
-            for (var j = 0; j < items.length; j++) {
+            for (j = 0; j < items.length; j++) {
               if (filter({i: j, item: items[j]}))
                 new_items.push(items[j]);
             }
@@ -350,7 +351,7 @@ JSONEditor.defaults.editors.geolocation = JSONEditor.AbstractEditor.extend({
 
           var item_titles = [];
           var item_values = [];
-          for (var j = 0; j < items.length; j++) {
+          for (j = 0; j < items.length; j++) {
             var item = items[j];
 
             // Rendered value

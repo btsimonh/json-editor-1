@@ -2,13 +2,16 @@
  * All editors should extend from this class
  */
 JSONEditor.AbstractEditor = Class.extend({
-  fireChangeHeaderEvent: function() {
-    $triggerc(this.container,'change_header_text');
-  },
   onChildEditorChange: function(editor) {
     if(!this.watch_listener) return;
     this.watch_listener();
+    this.notify();
+    this.change();
+  },
+  notify: function() {
     this.jsoneditor.notifyWatchers(this.path);
+  },
+  change: function() {
     if(this.parent) this.parent.onChildEditorChange(this);
     else this.jsoneditor.onChange();
   },
@@ -19,56 +22,57 @@ JSONEditor.AbstractEditor = Class.extend({
     if(!this.jsoneditor) return;
     this.jsoneditor.unregisterEditor(this);
   },
+  getNumColumns: function() {
+    return 12;
+  },
   init: function(options) {
-    var self = this;
-    this.container = options.container;
     this.jsoneditor = options.jsoneditor;
-
+    
     this.theme = this.jsoneditor.theme;
     this.template_engine = this.jsoneditor.template;
     this.iconlib = this.jsoneditor.iconlib;
-
+    
+    this.original_schema = options.schema;
+    this.schema = this.jsoneditor.expandSchema(this.original_schema);
+    
     this.options = $extend({}, (this.options || {}), (options.schema.options || {}), options);
-    this.schema = this.options.schema;
-
+    
     if(!options.path && !this.schema.id) this.schema.id = 'root';
     this.path = options.path || 'root';
+    this.formname = options.formname || this.path.replace(/\.([^.]+)/g,'[$1]');
+    if(this.jsoneditor.options.form_name_root) this.formname = this.formname.replace(/^root\[/,this.jsoneditor.options.form_name_root+'[');
+    this.key = this.path.split('.').pop();
+    this.parent = options.parent;
+    
+    this.link_watchers = [];
+    
+    if(options.container) this.setContainer(options.container);
+  },
+  setContainer: function(container) {
+    this.container = container;
     if(this.schema.id) this.container.setAttribute('data-schemaid',this.schema.id);
     if(this.schema.type && typeof this.schema.type === "string") this.container.setAttribute('data-schematype',this.schema.type);
     this.container.setAttribute('data-schemapath',this.path);
-    this.jsoneditor._data(this.container,'editor',this);
+  },
+  
+  preBuild: function() {
 
-    this.key = this.path.split('.').pop();
-    this.parent = options.parent;
-    this.link_watchers = [];
+  },
+  build: function() {
     
+  },
+  postBuild: function() {
     this.register();
-    
-    // If not required, add an add/remove property link
-    if(!this.isRemoveDisabled() && !this.isRequired() && !this.options.compact) {
-      this.title_links = this.theme.getFloatRightLinkHolder();
-      this.container.appendChild(this.title_links);
-      this.addremove = this.theme.getLink('remove '+this.getTitle());
-      this.title_links.appendChild(this.addremove);
-
-      this.addremove.addEventListener('click',function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Don't allow changing the properties when disabled
-        if(self.disabled) return;
-        
-        if(self.property_removed) {
-          self.addProperty();
-        }
-        else {
-          self.removeProperty();
-        }
-      
-        if(self.parent) self.parent.onChildEditorChange(self);
-        else self.jsoneditor.onChange();
-      });
-    }
+    this.setupWatchListeners();
+    this.addLinks();
+    this.setValue(this.getDefault(), true);
+    this.updateHeaderText();
+    this.jsoneditor.notifyWatchers(this.path);
+    this.watch_listener();
+  },
+  
+  setupWatchListeners: function() {
+    var self = this;
     
     // Watched fields
     this.watched = {};
@@ -79,6 +83,8 @@ JSONEditor.AbstractEditor = Class.extend({
         self.onWatchedFieldChange();
       }
     };
+    
+    this.register();
     if(this.schema.watch) {
       var path,path_parts,first,root,adjusted_path;
 
@@ -86,7 +92,7 @@ JSONEditor.AbstractEditor = Class.extend({
         if(!this.schema.watch.hasOwnProperty(name)) continue;
         path = this.schema.watch[name];
 
-        if(path instanceof Array) {
+        if(Array.isArray(path)) {
           path_parts = [path[0]].concat(path[1].split('.'));
         }
         else {
@@ -114,24 +120,24 @@ JSONEditor.AbstractEditor = Class.extend({
     if(this.schema.headerTemplate) {
       this.header_template = this.jsoneditor.compileTemplate(this.schema.headerTemplate, this.template_engine);
     }
-
-    this.build();
-    
+  },
+  
+  addLinks: function() {
     // Add links
-    this.link_holder = this.theme.getLinksHolder();
-    this.container.appendChild(this.link_holder);
-    if(this.schema.links) {
-      for(var i=0; i<this.schema.links.length; i++) {
-        this.addLink(this.getLink(this.schema.links[i]));
+    if(!this.no_link_holder) {
+      this.link_holder = this.theme.getLinksHolder();
+      this.container.appendChild(this.link_holder);
+      if(this.schema.links) {
+        for(var i=0; i<this.schema.links.length; i++) {
+          this.addLink(this.getLink(this.schema.links[i]));
+        }
       }
     }
-    
-    this.setValue(this.getDefault(), true);
-    this.updateHeaderText();
-    this.watch_listener();
   },
+  
+  
   getButton: function(text, icon, title) {
-    var btnClass = 'json-editor-btn-'+icon
+    var btnClass = 'json-editor-btn-'+icon;
     if(!this.iconlib) icon = null;
     else icon = this.iconlib.getIcon(icon);
     
@@ -159,7 +165,7 @@ JSONEditor.AbstractEditor = Class.extend({
     if(this.link_holder) this.link_holder.appendChild(link);
   },
   getLink: function(data) {
-    var holder;
+    var holder, link;
         
     // Get mime type of the link
     var mime = data.mediaType || 'application/javascript';
@@ -171,7 +177,7 @@ JSONEditor.AbstractEditor = Class.extend({
     // Image links
     if(type === 'image') {
       holder = this.theme.getBlockLinkHolder();
-      var link = document.createElement('a');
+      link = document.createElement('a');
       link.setAttribute('target','_blank');
       var image = document.createElement('img');
       
@@ -189,7 +195,7 @@ JSONEditor.AbstractEditor = Class.extend({
     else if(['audio','video'].indexOf(type) >=0) {
       holder = this.theme.getBlockLinkHolder();
       
-      var link = this.theme.getBlockLink();
+      link = this.theme.getBlockLink();
       link.setAttribute('target','_blank');
       
       var media = document.createElement(type);
@@ -259,10 +265,13 @@ JSONEditor.AbstractEditor = Class.extend({
     else return this.getTitle();
   },
   onWatchedFieldChange: function() {
-    if(this.header_template) {
-      var vars = $extend(this.getWatchedFieldValues(),{
+    var vars;
+    if(this.header_template) {      
+      vars = $extend(this.getWatchedFieldValues(),{
         key: this.key,
         i: this.key,
+        i0: (this.key*1),
+        i1: (this.key*1+1),
         title: this.getTitle()
       });
       var header_text = this.header_template(vars);
@@ -270,33 +279,16 @@ JSONEditor.AbstractEditor = Class.extend({
       if(header_text !== this.header_text) {
         this.header_text = header_text;
         this.updateHeaderText();
-        this.fireChangeHeaderEvent();
+        this.notify();
+        //this.fireChangeHeaderEvent();
       }
     }
     if(this.link_watchers.length) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       for(var i=0; i<this.link_watchers.length; i++) {
         this.link_watchers[i](vars);
       }
     }
-  },
-  addProperty: function() {
-    this.property_removed = false;
-    this.register();
-    this.addremove.innerHTML = '';
-    this.addremove.appendChild(document.createTextNode('remove '+this.getTitle()));
-  },
-  removeProperty: function() {
-    this.property_removed = true;
-    this.unregister();
-    this.addremove.innerHTML = '';
-    this.addremove.appendChild(document.createTextNode('add '+this.getTitle()));
-  },
-  build: function() {
-
-  },
-  isValid: function(callback) {
-    callback();
   },
   setValue: function(value) {
     this.value = value;
@@ -322,7 +314,7 @@ JSONEditor.AbstractEditor = Class.extend({
     this.header_text = null;
     this.header_template = null;
     this.value = null;
-    if(this.container.parentNode) this.container.parentNode.removeChild(this.container);
+    if(this.container && this.container.parentNode) this.container.parentNode.removeChild(this.container);
     this.container = null;
     this.jsoneditor = null;
     this.schema = null;
@@ -338,7 +330,7 @@ JSONEditor.AbstractEditor = Class.extend({
       return this.schema.required;
     }
     else if(this.jsoneditor.options.required_by_default) {
-      return true
+      return true;
     }
     else {
       return false;
@@ -348,43 +340,36 @@ JSONEditor.AbstractEditor = Class.extend({
     return this.jsoneditor.options.disable_remove_links === true;
   },
   getDefault: function() {
-    return this.schema.default || null;
-  },
-
-  getTheme: function() {
-    return this.theme;
-  },
-  getSchema: function() {
-    return this.schema;
-  },
-  getContainer: function() {
-    return this.container;
+    if(this.schema.default) return this.schema.default;
+    if(this.schema.enum) return this.schema.enum[0];
+    
+    var type = this.schema.type || this.schema.oneOf;
+    if(type && Array.isArray(type)) type = type[0];
+    if(type && typeof type === "object") type = type.type;
+    if(type && Array.isArray(type)) type = type[0];
+    
+    if(typeof type === "string") {
+      if(type === "number") return 0.0;
+      if(type === "boolean") return false;
+      if(type === "integer") return 0;
+      if(type === "string") return "";
+      if(type === "object") return {};
+      if(type === "array") return [];
+    }
+    
+    return null;
   },
   getTitle: function() {
     return this.schema.title || this.key;
   },
-  getPath: function() {
-    return this.path;
-  },
-  getParent: function() {
-    return this.parent;
-  },
   enable: function() {
-    if(this.addremove) this.addremove.style.opacity = '';
-    
     this.disabled = false;
   },
   disable: function() {
-    if(this.addremove) this.addremove.style.opacity = '.6';
-    
     this.disabled = true;
   },
   isEnabled: function() {
     return !this.disabled;
-  },
-  getOption: function(key, def) {
-    if(typeof this.options[key] !== 'undefined') return this.options[key];
-    else return def;
   },
   getDisplayText: function(arr) {
     var disp = [];
@@ -442,6 +427,16 @@ JSONEditor.AbstractEditor = Class.extend({
     });
     
     return disp;
+  },
+  getOption: function(key) {
+    try {
+      throw "getOption is deprecated";
+    }
+    catch(e) {
+      window.console.error(e);
+    }
+    
+    return this.options[key];
   },
   showValidationErrors: function(errors) {
 

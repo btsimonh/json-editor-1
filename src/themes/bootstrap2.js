@@ -3,15 +3,40 @@ JSONEditor.defaults.themes.bootstrap2 = JSONEditor.AbstractTheme.extend({
     // TODO: use bootstrap slider
     return this._super(min, max, step);
   },
+  getGridContainer: function() {
+    var el = document.createElement('div');
+    el.className = 'container-fluid';
+    return el;
+  },
+  getGridRow: function() {
+    var el = document.createElement('div');
+    el.className = 'row-fluid';
+    return el;
+  },
+  getFormInputLabel: function(text) {
+    var el = this._super(text);
+    el.style.display = 'inline-block';
+    el.style.fontWeight = 'bold';
+    return el;
+  },
+  setGridColumnSize: function(el,size) {
+    el.className = 'span'+size;
+  },
   getSelectInput: function(options) {
     var input = this._super(options);
     input.style.width = 'auto';
+    input.style.maxWidth = '98%';
     return input;
+  },
+  getFormInputField: function(type) {
+    var el = this._super(type);
+    el.style.width = '98%';
+    return el;
   },
   afterInputReady: function(input) {
     if(input.controlgroup) return;
     input.controlgroup = this.closest(input,'.control-group');
-    input.controls = this.closest(input,'controls');
+    input.controls = this.closest(input,'.controls');
     if(this.closest(input,'.compact')) {
       input.controlgroup.className = input.controlgroup.className.replace(/control-group/g,'').replace(/[ ]{2,}/g,' ');
       input.controls.className = input.controlgroup.className.replace(/controls/g,'').replace(/[ ]{2,}/g,' ');
@@ -42,6 +67,7 @@ JSONEditor.defaults.themes.bootstrap2 = JSONEditor.AbstractTheme.extend({
       label.className += ' checkbox';
       label.appendChild(input);
       controls.appendChild(label);
+      controls.style.height = '30px';
     }
     else {
       if(label) {
@@ -100,7 +126,7 @@ JSONEditor.defaults.themes.bootstrap2 = JSONEditor.AbstractTheme.extend({
   getTabHolder: function() {
     var el = document.createElement('div');
     el.className = 'tabbable tabs-left';
-    el.innerHTML = "<ul class='nav nav-tabs'></ul><div class='tab-content'></div>";
+    el.innerHTML = "<ul class='nav nav-tabs span2' style='margin-right: 0;'></ul><div class='tab-content span10' style='overflow:visible;'></div>";
     return el;
   },
   getTab: function(text) {

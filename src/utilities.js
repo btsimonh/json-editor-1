@@ -34,13 +34,14 @@ var $extend = function(destination) {
 
 var $each = function(obj,callback) {
   if(!obj) return;
+  var i;
   if(typeof obj.length !== 'undefined') {
-    for(var i=0; i<obj.length; i++) {
+    for(i=0; i<obj.length; i++) {
       if(callback(i,obj[i])===false) return;
     }
   }
   else {
-    for(var i in obj) {
+    for(i in obj) {
       if(!obj.hasOwnProperty(i)) continue;
       if(callback(i,obj[i])===false) return;
     }
@@ -53,15 +54,10 @@ var $trigger = function(el,event) {
   el.dispatchEvent(e);
 };
 var $triggerc = function(el,event) {
-  if (window.CustomEvent) {
-    var e = new CustomEvent(event,{
-      bubbles: true,
-      cancelable: true
-    });
-  } else {
-    var e = document.createEvent('CustomEvent');
-    e.initCustomEvent(event, true, true);
-  }
+  var e = new CustomEvent(event,{
+    bubbles: true,
+    cancelable: true
+  });
 
   el.dispatchEvent(e);
 };
@@ -70,4 +66,4 @@ var $uuid = function() {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
-}
+};

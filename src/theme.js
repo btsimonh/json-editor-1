@@ -5,9 +5,35 @@ JSONEditor.AbstractTheme = Class.extend({
   getFloatRightLinkHolder: function() {
     var el = document.createElement('div');
     el.style = el.style || {};
-    el.style.float = 'right';
-    el.style['margin-left'] = '10px';
+    el.style.cssFloat = 'right';
+    el.style.marginLeft = '10px';
     return el;
+  },
+  getModal: function() {
+    var el = document.createElement('div');
+    el.style.backgroundColor = 'white';
+    el.style.border = '1px solid black';
+    el.style.boxShadow = '3px 3px black';
+    el.style.position = 'absolute';
+    el.style.zIndex = '10';
+    el.style.display = 'none';
+    return el;
+  },
+  getGridContainer: function() {
+    var el = document.createElement('div');
+    return el;
+  },
+  getGridRow: function() {
+    var el = document.createElement('div');
+    el.className = 'row';
+    return el;
+  },
+  getGridColumn: function() {
+    var el = document.createElement('div');
+    return el;
+  },
+  setGridColumnSize: function(el,size) {
+    
   },
   getLink: function(text) {
     var el = document.createElement('a');
@@ -33,7 +59,9 @@ JSONEditor.AbstractTheme = Class.extend({
     return el;
   },
   getCheckboxLabel: function(text) {
-    return this.getFormInputLabel(text);
+    var el = this.getFormInputLabel(text);
+    el.style.fontWeight = 'normal';
+    return el;
   },
   getHeader: function(text) {
     var el = document.createElement('h3');
@@ -55,10 +83,44 @@ JSONEditor.AbstractTheme = Class.extend({
     }
     return checkbox;
   },
+  getMultiCheckboxHolder: function(controls,label,description) {
+    var el = document.createElement('div');
+
+    if(label) {
+      label.style.display = 'block';
+      el.appendChild(label);
+    }
+
+    for(var i in controls) {
+      if(!controls.hasOwnProperty(i)) continue;
+      controls[i].style.display = 'inline-block';
+      controls[i].style.marginRight = '20px';
+      el.appendChild(controls[i]);
+    }
+
+    if(description) el.appendChild(description);
+
+    return el;
+  },
   getSelectInput: function(options) {
     var select = document.createElement('select');
     if(options) this.setSelectOptions(select, options);
     return select;
+  },
+  getSwitcher: function(options) {
+    var switcher = this.getSelectInput(options);
+    switcher.style.backgroundColor = 'transparent';
+    switcher.style.height = 'auto';
+    switcher.style.fontStyle = 'italic';
+    switcher.style.fontWeight = 'normal';
+    switcher.style.padding = '0 0 0 3px';
+    return switcher;
+  },
+  getSwitcherOptions: function(switcher) {
+    return switcher.getElementsByTagName('option');
+  },
+  setSwitcherOptions: function(switcher, options, titles) {
+    this.setSelectOptions(switcher, options, titles);
   },
   setSelectOptions: function(select, options, titles) {
     titles = titles || [];
@@ -95,9 +157,15 @@ JSONEditor.AbstractTheme = Class.extend({
   },
   getFormControl: function(label, input, description) {
     var el = document.createElement('div');
-    el.setAttribute('class','form-control');
+    el.className = 'form-control';
     if(label) el.appendChild(label);
-    el.appendChild(input);
+    if(input.type === 'checkbox') {
+      label.insertBefore(input,label.firstChild);
+    }
+    else {
+      el.appendChild(input);
+    }
+    
     if(description) el.appendChild(description);
     return el;
   },
@@ -129,7 +197,7 @@ JSONEditor.AbstractTheme = Class.extend({
   getButtonHolder: function() {
     return document.createElement('div');
   },
-  getButton: function(text, icon, title) {    
+  getButton: function(text, icon, title) {
     var el = document.createElement('button');
     this.setButtonText(el,text,icon,title);
     return el;
@@ -240,7 +308,7 @@ JSONEditor.AbstractTheme = Class.extend({
   },
   markTabInactive: function(tab) {
     this.applyStyles(tab,{
-      opacity:.5,
+      opacity:0.5,
       background: ''
     });
   },

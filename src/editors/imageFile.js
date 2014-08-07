@@ -167,8 +167,8 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                 console.error("Please select a file before clicking 'Load'");
               }
               else {
-                file = fileinput.files[0];
-                fr = new FileReader();
+                var file = fileinput.files[0];
+                var fr = new FileReader();
                 fr.onload = function(params) {
                   // use the data URI as the result.
                   imgelem.src = fr.result;
@@ -216,7 +216,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
     if (this.format)
       this.input.setAttribute('data-schemaformat', this.format);
 
-    this.control = this.getTheme().getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description);
     this.container.appendChild(this.control);
 
     // If the Select2 library is loaded
@@ -287,19 +287,21 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
    */
   onWatchedFieldChange: function() {
     var self = this;
-
+    var vars;
+    
     // If this editor needs to be rendered by a macro template
     if (this.template) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       this.setValue(this.template(vars), false, true);
     }
     // If this editor uses a dynamic select box
     if (this.enumSource) {
-      var vars = this.getWatchedFieldValues();
+      vars = this.getWatchedFieldValues();
       var select_options = [];
       var select_titles = [];
 
       for (var i = 0; i < this.enumSource.length; i++) {
+        var j;
         // Constant values
         if (this.enumSource[i] instanceof Array) {
           select_options = select_options.concat(this.enumSource[i]);
@@ -316,7 +318,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
           // Filter the items
           if (this.enumSource[i].filter) {
             var new_items = [];
-            for (var j = 0; j < items.length; j++) {
+            for (j = 0; j < items.length; j++) {
               if (filter({i: j, item: items[j]}))
                 new_items.push(items[j]);
             }
@@ -325,7 +327,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
 
           var item_titles = [];
           var item_values = [];
-          for (var j = 0; j < items.length; j++) {
+          for (j = 0; j < items.length; j++) {
             var item = items[j];
 
             // Rendered value

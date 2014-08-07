@@ -6,9 +6,9 @@ JSON Editor
 JSON Editor takes a JSON Schema and uses it to generate an HTML form.  
 It has full support for JSON Schema version 3 and 4 and can integrate with several popular CSS frameworks (bootstrap, foundation, and jQueryUI).
 
-Check out an interactive demo: http://rawgithub.com/jdorn/json-editor/master/demo.html
+Check out an interactive demo (demo.html): http://jeremydorn.com/json-editor/
 
-Download the [production version][min] (18K when gzipped) or the [development version][max].
+Download the [production version][min] (22K when gzipped) or the [development version][max].
 
 [min]: https://raw.github.com/jdorn/json-editor/master/dist/jsoneditor.min.js
 [max]: https://raw.github.com/jdorn/json-editor/master/dist/jsoneditor.js
@@ -51,6 +51,21 @@ var editor = new JSONEditor(element, options);
 
 #### Options
 
+Options can be set globally or on a per-instance basis during instantiation.
+
+```js
+// Set an option globally
+JSONEditor.defaults.options.theme = 'bootstrap2';
+
+// Set an option during instantiation
+var editor = new JSONEditor(element, {
+  //...
+  theme: 'bootstrap2'
+});
+```
+
+Here are all the available options:
+
 <table>
   <thead>
   <tr>
@@ -62,23 +77,43 @@ var editor = new JSONEditor(element, options);
   <tbody>
   <tr>
     <td>ajax</td>
-    <td>If <code>true</code>, JSON Editor will load external urls in <code>$ref</code> via ajax.</td>
+    <td>If <code>true</code>, JSON Editor will load external URLs in <code>$ref</code> via ajax.</td>
+    <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td>disable_array_add</td>
+    <td>If <code>true</code>, remove all "add row" buttons from arrays.</td>
+    <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td>disable_array_delete</td>
+    <td>If <code>true</code>, remove all "delete row" buttons from arrays.</td>
+    <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td>disable_array_reorder</td>
+    <td>If <code>true</code>, remove all "move up" and "move down" buttons from arrays.</td>
     <td><code>false</code></td>
   </tr>
   <tr>
     <td>disable_collapse</td>
-    <td>If <code>true</code>, JSON Editor will not present a "Collapse" button.</td>
+    <td>If <code>true</code>, remove all collapse buttons from objects and arrays.</td>
     <td><code>false</code></td>
   </tr>
   <tr>
     <td>disable_edit_json</td>
-    <td>If <code>true</code>, JSON Editor will not present an "Edit JSON" button.</td>
+    <td>If <code>true</code>, remove all Edit JSON buttons from objects.</td>
     <td><code>false</code></td>
   </tr>
   <tr>
-    <td>disable_remove_links</td>
-    <td>If <code>true</code>, JSON Editor will not present a "Remove" link alongside each property.</td>
+    <td>disable_properties</td>
+    <td>If <code>true</code>, remove all Edit Properties buttons from objects.</td>
     <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td>form_name_root</td>
+    <td>The first part of the `name` attribute of form inputs in the editor.  An full example name is `root[person][name]` where "root" is the form_name_root.</td>
+    <td>root</td>
   </tr>
   <tr>
     <td>iconlib</td>
@@ -106,6 +141,11 @@ var editor = new JSONEditor(element, options);
     <td><code>{}</code></td>
   </tr>
   <tr>
+    <td>show_errors</td>
+    <td>When to show validation errors in the UI.  Valid values are <code>interaction</code>, <code>change</code>, <code>always</code>, and <code>never</code>.</td>
+    <td><code>"interaction"</code></td>
+  </tr>
+  <tr>
     <td>startval</td>
     <td>Seed the editor with an initial value.  This should be valid against the editor's schema.</td>
     <td><code>null</code></td>
@@ -123,54 +163,10 @@ var editor = new JSONEditor(element, options);
   </tbody>
 </table>
 
-
-Here's an example using all the options:
-
-```javascript
-var editor = new JSONEditor(element, {
-  schema: {
-    type: "object",
-    properties: {
-      name: {
-        description: "Will load from the pre-defined schema passed in during initialization",
-        $ref: "http://example.com/name.json"
-      },
-      age: {
-        description: "Will load via ajax.  If the ajax option was false, this would throw an exception",
-        $ref: "http://example.com/age.json"
-      },
-      bio: {
-        type: "string",
-        format: "markdown"
-      }
-    }
-  },
-  startval: {
-    name: "John Smith",
-    age: 21,
-    bio: ""
-  },
-  ajax: true,
-  refs: {
-    "http://example.com/name.json": {
-      type: "string"
-    }
-  },
-  disable_collapse: false,
-  disable_edit_json: false,
-  disable_remove_links: false,
-  required_by_default: true,
-  no_additional_properties: true,
-  theme: 'bootstrap3',
-  template: 'underscore',
-  iconlib: 'fontawesome4'
-});
-```
-
 __*Note__ If the `ajax` property is `true` and JSON Editor needs to fetch an external url, the api methods won't be available immediately.
 Listen for the `ready` event before calling them.
 
-```javascript
+```js
 editor.on('ready',function() {
   // Now the api methods will be available
   editor.validate();
@@ -179,7 +175,7 @@ editor.on('ready',function() {
 
 ### Get/Set Value
 
-```javascript
+```js
 editor.setValue({name: "John Smith"});
 
 var value = editor.getValue();
@@ -188,7 +184,7 @@ console.log(value.name) // Will log "John Smith"
 
 Instead of getting/setting the value of the entire editor, you can also work on individual parts of the schema:
 
-```javascript
+```js
 // Get a reference to a node within the editor
 var name = editor.getEditor('root.name');
 
@@ -262,7 +258,7 @@ editor.unwatch('path.to.field',function_reference);
 
 This lets you disable editing for the entire form or part of the form.
 
-```javascript
+```js
 // Disable entire form
 editor.disable();
 
@@ -302,15 +298,15 @@ The currently supported themes are:
 *  jqueryui
 
 The default theme is `html`, which doesn't use any special class names or styling.
-This default can be changed by setting the `JSONEditor.defaults.theme` variable.
+This default can be changed by setting the `JSONEditor.defaults.options.theme` variable.
 
 ```javascript
-JSONEditor.defaults.theme = 'foundation5';
+JSONEditor.defaults.options.theme = 'foundation5';
 ```
 
 You can override this default on a per-instance basis by passing a `theme` parameter in when initializing:
 
-```javascript
+```js
 var editor = new JSONEditor(element,{
   schema: schema,
   theme: 'jqueryui'
@@ -333,9 +329,9 @@ The supported icon libs are:
 
 By default, no icons are used. Just like the CSS theme, you can set the icon lib globally or when initializing:
 
-```javascript
+```js
 // Set the global default
-JSONEditor.defaults.iconlib = "bootstrap2";
+JSONEditor.defaults.options.iconlib = "bootstrap2";
 
 // Set the icon lib during initialization
 var editor = new JSONEditor(element,{
@@ -359,7 +355,7 @@ Some of The [hyper-schema][hyper] specification is supported as well.
 
 ### $ref and definitions
 
-JSON Editor supports schema references to external urls and local definitions.  Here's an example showing both:
+JSON Editor supports schema references to external URLs and local definitions.  Here's an example showing both:
 
 ```json
 {
@@ -382,11 +378,13 @@ JSON Editor supports schema references to external urls and local definitions.  
 }
 ```
 
-Local references must point to the `definitions` object of the root node of the schema and can't be nested.
-So, both `#/customkey/name` and `#/definitions/name/first` will throw an exception.
+Local references must point to the `definitions` object of the root node of the schema.
+So, `#/customkey/name` will throw an exception.
 
 If loading an external url via Ajax, the url must either be on the same domain or return the correct HTTP cross domain headers.
-If your urls don't meet this requirement, you can pass in the references to JSON Editor during initialization (see Usage section above).
+If your URLs don't meet this requirement, you can pass in the references to JSON Editor during initialization (see Usage section above).
+
+Self-referential $refs are supported.  Check out `examples/recursive.html` for usage examples.
 
 ### hyper-schema links
 
@@ -398,8 +396,7 @@ Image, audio, and video links will display the media inline as well as providing
 Here are a couple examples:
 
 Simple text link
-
-```json
+```js+jinja
 {
   "title": "Blog Post Id",
   "type": "integer",
@@ -413,7 +410,7 @@ Simple text link
 ```
 
 Show a video preview (using HTML5 video)
-```json
+```js+jinja
 {
   "title": "Video filename",
   "type": "string",
@@ -429,6 +426,62 @@ Show a video preview (using HTML5 video)
 The `href` property is a template that gets re-evaluated everytime the value changes.
 The variable `self` is always available.  Look at the __Dependencies__ section below for how to include other fields or use a custom template engine.
 
+### Property Ordering
+
+There is no way to specify property ordering in JSON Schema (although this may change in v5 of the spec).
+
+JSON Editor introduces a new keyword `propertyOrder` for this purpose.  The default property order if unspecified is 1000.  Properties with the same order will use normal JSON key ordering.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "prop1": {
+      "type": "string"
+    },
+    "prop2": {
+      "type": "string",
+      "propertyOrder": 10
+    },
+    "prop3": {
+      "type": "string",
+      "propertyOrder": 1001
+    },
+    "prop4": {
+      "type": "string",
+      "propertyOrder": 1
+    }
+  }
+}
+```
+
+In the above example schema, `prop1` does not have an order specified, so it will default to 1000.
+So, the final order of properties in the form (and in returned JSON data) will be:
+
+1.  prop4 (order 1)
+2.  prop2 (order 10)
+3.  prop1 (order 1000)
+4.  prop3 (order 1001)
+
+### Default Properties
+
+The default behavior of JSON Editor is to include all object properties defined with the `properties` keyword.
+
+To override this behaviour, you can use the keyword `defaultProperties` to set which ones are included:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "age": {"type": "integer"}
+  },
+  "defaultProperties": ["name"]
+}
+```
+
+Now, only the `name` property above will be included by default.  You can use the "Object Properties" button
+to add the "age" property back in.
 
 ### format
 
@@ -465,48 +518,6 @@ Here is an example that will show a color picker in browsers that support it:
     }
   }
 }
-```
-#### Image File Editor
-
-You can add a picture selector by using a type of `imageFile` and a format of `imageFile`. The value will be a BASE64-encoded data URI.
-
-```json
-{
-"type": "imageFile" ,
-"format": "imageFile",
-"title": "Photo"
-}
-```
-
-This editor also provides a thumbnail preview. The generated HTML for the above is:
-```html
-    <div class="image-upload" data-schemaformat="imageFile">
-        <label for="39895787-b943-4f83-bc86-d21310d46e5f">
-        <img src="data:image/svg+xml;base64,PHN2Zy...">
-       </label>
-        <input type="file" class="hidden" accept="image/*" id="39895787-b943-4f83-bc86-d21310d46e5f">
-    </div>
-```
-
-The `id` attribute of the `input` field is an auto-generated unique ID, so that the label can also be attached. This makes formatting with CSS much simpler, since `input type=file` items are notoriously awkward to style (see [this stackoverflow article](http://stackoverflow.com/a/18803568/956779)). This enables you to hide the `input type=file` element with CSS, and use the placeholder `img` as a button (since it is part of the `label`).
-
-The `img` element initially contains a placeholder image, which will be replaced with the image thumbnail. Currently this is hard-coded; it needs to be made more configurable.
-
-#### Autocomplete
-
-This is a string editor that provides autocomplete functionality. It relies on JQuery and JQueryUI.
-
-```json
-        "favouriteBeatle": {
-          "type": "string",
-          "title": "Name of Favourite Beatle",
-          "required": true,
-          "autocomplete": true,
-          "autocompleteData": ["John Lennon",
-                               "George Harrison",
-                               "Paul McCartney",
-                               "Ringo Starr"]
-
 ```
 
 #### Specialized String Editors
@@ -611,7 +622,7 @@ You can use the hyper-schema keyword `media` instead of `format` too if you pref
 
 You can override the default Ace theme by setting the `JSONEditor.plugins.ace.theme` variable.
 
-```javascript
+```js
 JSONEditor.plugins.ace.theme = 'twilight';
 ```
 
@@ -641,44 +652,64 @@ Here's an example of the `table` format:
 }
 ```
 
-#### Image File Arrays
-
-There is also an `imageFileArray` type; at the moment it doesn't do anything special but in future it will provide an array editor that is more customized to the task of adding and removing images.
-
-You can pass in some additional options:
-
-Option                 | Effect                                       | Default
------------------------|----------------------------------------------|--------
-noMoveButtons          | Suppress "move up" and "move down" buttons.  | false
-noDeleteLastRowButton  | Suppress "delete last" button.               | false
-noDeleteAllButton      | Suppress "delete all" button.                | false
-
-##### Image File Array Example
+For arrays of enumerated strings, you can also use the `select` or `checkbox` format.  These formats require a very specific schema to work:
 
 ```json
-        "Photos": {
-          "type": "imageFileArray",
-          "compact":"true",
-          "title": "Attach Photos",
-          "noDeleteLastRowButton":"true",
-          "noDeleteAllButton":"true",
-          "noMoveButtons":"true",
-          "items": {
-            "type": "imageFile" ,
-            "format": "imageFile",
-            "title": "Photo"
-          }
-        }
+{
+  "type": "array",
+  "uniqueItems": true,
+  "items": {
+    "type": "string",
+    "enum": ["value1","value2"]
+  }
+}
 ```
+
+By default, the `checkbox` editor (multiple checkboxes) will be used if there are fewer than 8 enum options.  Otherwise, the `select` editor (a multiselect box) will be used.
+
+You can override this default by passing in a format:
+
+```json
+{
+  "type": "array",
+  "format": "select",
+  "uniqueItems": true,
+  "items": {
+    "type": "string",
+    "enum": ["value1","value2"]
+  }
+}
+```
+
+#### Objects
+
+The default object layout is one child editor per row.  The `grid` format will instead put multiple child editors per row.
+This can make the editor much more compact, but at a cost of not guaranteeing child editor order.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "format": "grid"
+}
+```
+
 
 Editor Options
 ----------------
 
 Editors can accept options which alter the behavior in some way.
 
-Right now, there is only 1 supported option
-
-*  `collapsed` - If set to true for the `object`, `array`, or `table` editor, child editors will be collapsed by default.
+*  `collapsed` - If set to true, the editor will start collapsed (works for objects and arrays)
+*  `disable_array_add` - If set to true, the "add row" button will be hidden (works for arrays)
+*  `disable_array_delete` - If set to true, the "delete row" buttons will be hidden (works for arrays)
+*  `disable_array_reorder` - If set to true, the "move up/down" buttons will be hidden (works for arrays)
+*  `disable_collapse` - If set to true, the collapse button will be hidden (works for objects and arrays)
+*  `disable_edit_json` - If set to true, the Edit JSON button will be hidden (works for objects)
+*  `disable_properties` - If set to true, the Edit Properties button will be hidden (works for objects)
+*  `hidden` - If set to true, the editor will not appear in the UI (works for all types)
 
 ```json
 {
@@ -694,9 +725,16 @@ Right now, there is only 1 supported option
 }
 ```
 
+You can globally set the default options too if you want:
+
+```js
+JSONEditor.defaults.editors.object.options.collapsed = true;
+```
+
+
 Dependencies
 ------------------
-Sometimes, it's necessary to have one field's value depend on anothers.  
+Sometimes, it's necessary to have one field's value depend on another's.  
 
 The `dependencies` keyword from the JSON Schema specification is not nearly flexible enough to handle most use cases, 
 so JSON Editor introduces a couple custom keywords that help in this regard.
@@ -772,15 +810,15 @@ JSON Editor uses a javascript template engine to accomplish this.  A barebones t
 *  swig
 *  underscore
 
-You can change the default by setting `JSONEditor.defaults.template` to one of the supported template engines:
+You can change the default by setting `JSONEditor.defaults.options.template` to one of the supported template engines:
 
 ```javascript
-JSONEditor.defaults.template = 'handlebars';
+JSONEditor.defaults.options.template = 'handlebars';
 ```
 
 You can set the template engine on a per-instance basis as well:
 
-```javascript
+```js
 var editor = new JSONEditor(element,{
   schema: schema,
   template: 'hogan'
@@ -789,7 +827,7 @@ var editor = new JSONEditor(element,{
 
 Here is the completed `full_name` example using the default barebones template engine:
 
-```javascript
+```js+jinja
 {
   "type": "object",
   "properties": {
@@ -865,7 +903,7 @@ This is the most basic usage of `enumSource`.  The more verbose form of this pro
 filtering, pulling from multiple sources, constant values, etc..
 Here's a more complex example (this uses the Swig template engine syntax to show some advanced features)
 
-```javascript
+```js+jinja
 {
   // An array of sources
   "enumSource": [
@@ -892,7 +930,7 @@ Here's a more complex example (this uses the Swig template engine syntax to show
 The colors examples used an array of strings directly.  Using the verbose form, you can 
 also make it work with an array of objects.  Here's an example:
 
-```javascript
+```js+jinja
 {
   "type": "object",
   "properties": {
@@ -927,19 +965,19 @@ All of the optional templates in the verbose form have the properties `item` and
 
 The `title` keyword of a schema is used to add user friendly headers to the editing UI.  Sometimes though, dynamic headers, which change based on other fields, are helpful.
 
-Consider the example of an array of children.  Without dynamic headers, the UI for the array elements would show `Child 0`, `Child 1`, etc..  
-It would be much nicer if the headers could be dynamic and incorporate information about the children, such as `0 - John (age 9)`, `1 - Sarah (age 11)`.
+Consider the example of an array of children.  Without dynamic headers, the UI for the array elements would show `Child 1`, `Child 2`, etc..  
+It would be much nicer if the headers could be dynamic and incorporate information about the children, such as `1 - John (age 9)`, `2 - Sarah (age 11)`.
 
-To accomplish this, use the `headerTemplate` property.  All of the watched variables are passed into this template, along with the static title `title` (e.g. "Child"), the index `i` (e.g. "0" and "1"), and the field's value `self` (e.g. `{"name": "John", "age": 9}`).
+To accomplish this, use the `headerTemplate` property.  All of the watched variables are passed into this template, along with the static title `title` (e.g. "Child"), the 0-based index `i0` (e.g. "0" and "1"), the 1-based index `i1`, and the field's value `self` (e.g. `{"name": "John", "age": 9}`).
 
-```json
+```js+jinja
 {
   "type": "array",
   "title": "Children",
   "items": {
     "type": "object",
     "title": "Child",
-    "headerTemplate": "{{ i }} - {{ self.name }} (age {{ self.age }})",
+    "headerTemplate": "{{ i1 }} - {{ self.name }} (age {{ self.age }})",
     "properties": {
       "name": { "type": "string" },
       "age": { "type": "integer" }
@@ -953,7 +991,7 @@ To accomplish this, use the `headerTemplate` property.  All of the watched varia
 If one of the included template engines isn't sufficient, 
 you can use any custom template engine with a `compile` method.  For example:
 
-```javascript
+```js
 var myengine = {
   compile: function(template) {
     // Compile should return a render function
@@ -966,7 +1004,7 @@ var myengine = {
 };
 
 // Set globally
-JSONEditor.defaults.template = myengine;
+JSONEditor.defaults.options.template = myengine;
 
 // Set on a per-instance basis
 var editor = new JSONEditor(element,{
@@ -975,6 +1013,31 @@ var editor = new JSONEditor(element,{
 });
 ```
 
+Language and String Customization
+-----------------
+
+JSON Editor uses a translate function to generate strings in the UI.  A default `en` language mapping is provided.
+
+You can easily override individual translations in the default language or create your own language mapping entirely.
+
+```js+jinja
+// Override a specific translation
+JSONEditor.defaults.languages.en.error_minLength = 
+  "This better be at least {{0}} characters long or else!";
+  
+  
+// Create your own language mapping
+// Any keys not defined here will fall back to the "en" language
+JSONEditor.defaults.languages.es = {
+  error_notset: "propiedad debe existir"
+};
+```
+
+By default, all instances of JSON Editor will use the `en` language.  To override this default, set the `JSONEditor.defaults.language` property.
+
+```js
+JSONEditor.defaults.language = "es";
+```
 
 Custom Editor Interfaces
 -----------------
@@ -987,7 +1050,7 @@ JSON Editor uses resolver functions to determine which editor interface to use f
 
 Let's say you make a custom `location` editor for editing geo data.  You can add a resolver function to use this custom editor when appropriate. For example:
 
-```javascript
+```js
 // Add a resolver function to the beginning of the resolver list
 // This will make it run before any other ones
 JSONEditor.defaults.resolvers.unshift(function(schema) {
@@ -1027,7 +1090,7 @@ The possibilities are endless.  Some ideas:
 *  Radio button version of the `select` editor
 *  Autosuggest for strings (like enum, but not restricted to those values)
 *  Better editor for arrays of strings (tag editor)
-*  Canvas based image editor that produces Base64 data urls
+*  Canvas based image editor that produces Base64 data URLs
 
 
 Custom Validation
@@ -1037,13 +1100,13 @@ JSON Editor provides a hook into the validation engine for adding your own custo
 
 Let's say you want to force all schemas with `format` set to `date` to match the pattern `YYYY-MM-DD`.
 
-```javascript
+```js
 // Custom validators must return an array of errors or an empty array if valid
 JSONEditor.defaults.custom_validators.push(function(schema, value, path) {
   var errors = [];
   if(schema.format==="date") {
     if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) {
-      // Errors must be an object with `path`, `property`, and `mesage`
+      // Errors must be an object with `path`, `property`, and `message`
       errors.push({
         path: path,
         property: 'format',
@@ -1062,7 +1125,7 @@ __*WARNING__: This style of usage is deprecated and may not be supported in futu
 
 When jQuery (or Zepto) is loaded on the page, you can use JSON Editor like a normal jQuery plugin if you prefer.
 
-```javascript
+```js
 $("#editor_holder")
   .jsoneditor({
     schema: {},

@@ -30,13 +30,14 @@ module.exports = function(grunt) {
           'src/editors/object.js',
           'src/editors/imageFile.js',
           'src/editors/array.js',
-          'src/editors/geolocation.js',
           'src/editors/imageFileArray.js',
           'src/editors/table.js',
           'src/editors/multiple.js',
           'src/editors/enum.js',
           'src/editors/checkbox.js', 
           'src/editors/select.js',
+          'src/editors/multiselect.js',
+          'src/editors/base64.js',
           
           // All the themes and iconlibs
           'src/theme.js',
@@ -57,7 +58,7 @@ module.exports = function(grunt) {
           'src/outro.js'
         ],
         dest: 'dist/jsoneditor.js'
-      },
+      }
     },
     uglify: {
       dist: {
@@ -73,6 +74,56 @@ module.exports = function(grunt) {
         files: ["src/**/*.js"],
         tasks: ["concat"]
       }
+    },
+    jshint: {
+      options: {
+        browser: true,
+        indent: 2,
+        nonbsp: true,
+        nonew: true,
+        immed: true,
+        latedef: true
+      },
+      beforeconcat: [
+        'src/class.js',
+        'src/ie9.js',
+        
+        // Utils like extend, each, and trigger
+        'src/utilities.js',
+        
+        // The main JSONEditor class
+        'src/core.js',
+
+        // JSON Schema validator
+        'src/validator.js',
+        
+        // All the editors
+        'src/editor.js',
+        'src/editors/*.js',
+        
+        // All the themes and iconlibs
+        'src/theme.js',
+        'src/themes/*.js',
+        'src/iconlib.js',
+        'src/iconlibs/*.js',
+
+        // The JS templating engines
+        'src/templates/*.js',
+
+        // Set the defaults
+        'src/defaults.js',
+        
+        // Wrapper for $.fn style initialization
+        'src/jquery.js'
+      ],
+      afterconcat: {
+        options: {
+          undef: true
+        },
+        files: {
+          src: ['dist/jsoneditor.js']
+        }
+      }
     }
   });
 
@@ -80,8 +131,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-jshint');
 
   // Default task.
-  grunt.registerTask('default', ['concat', 'uglify']);
+  grunt.registerTask('default', ['jshint:beforeconcat','concat','jshint:afterconcat','uglify']);
 
 };

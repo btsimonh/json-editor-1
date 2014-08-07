@@ -4,13 +4,17 @@ JSONEditor.defaults.themes.foundation = JSONEditor.AbstractTheme.extend({
     var el = document.createElement('div');
     el.style.marginBottom = '15px';
     return el;
-  }, 
+  },
   getSelectInput: function(options) {
     var el = this._super(options);
-    el.style.width = 'auto';
     el.style.minWidth = 'none';
     el.style.padding = '5px';
     el.style.marginTop = '3px';
+    return el;
+  },
+  getSwitcher: function(options) {
+    var el = this._super(options);
+    el.style.paddingRight = '8px';
     return el;
   },
   afterInputReady: function(input) {
@@ -18,6 +22,17 @@ JSONEditor.defaults.themes.foundation = JSONEditor.AbstractTheme.extend({
       input.style.marginBottom = 0;
     }
     input.group = this.closest(input,'.form-control');
+  },
+  getFormInputLabel: function(text) {
+    var el = this._super(text);
+    el.style.display = 'inline-block';
+    return el;
+  },
+  getFormInputField: function(type) {
+    var el = this._super(type);
+    el.style.width = '100%';
+    el.style.marginBottom = type==='checkbox'? '0' : '12px';
+    return el;
   },
   getFormInputDescription: function(text) {
     var el = document.createElement('p');
@@ -64,6 +79,7 @@ JSONEditor.defaults.themes.foundation = JSONEditor.AbstractTheme.extend({
   },
   removeInputError: function(input) {
     if(!input.errmsg) return;
+    input.group.className = input.group.className.replace(/ error/g,'');
     input.errmsg.style.display = 'none';
   }
 });
@@ -75,11 +91,20 @@ JSONEditor.defaults.themes.foundation3 = JSONEditor.defaults.themes.foundation.e
     el.style.fontSize = '.6em';
     return el;
   },
+  getFormInputLabel: function(text) {
+    var el = this._super(text);
+    el.style.fontWeight = 'bold';
+    return el;
+  },
   getTabHolder: function() {
     var el = document.createElement('div');
     el.className = 'row';
     el.innerHTML = "<dl class='tabs vertical two columns'></dl><div class='tabs-content ten columns'></div>";
     return el;
+  },
+  setGridColumnSize: function(el,size) {
+    var sizes = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+    el.className = 'columns '+sizes[size];
   },
   getTab: function(text) {
     var el = document.createElement('dd');
@@ -116,9 +141,17 @@ JSONEditor.defaults.themes.foundation4 = JSONEditor.defaults.themes.foundation.e
     el.style.fontSize = '.6em';
     return el;
   },
+  setGridColumnSize: function(el,size) {
+    el.className = 'columns large-'+size;
+  },
   getFormInputDescription: function(text) {
     var el = this._super(text);
     el.style.fontSize = '.8rem';
+    return el;
+  },
+  getFormInputLabel: function(text) {
+    var el = this._super(text);
+    el.style.fontWeight = 'bold';
     return el;
   }
 });
@@ -129,6 +162,9 @@ JSONEditor.defaults.themes.foundation5 = JSONEditor.defaults.themes.foundation.e
     var el = this._super(text);
     el.style.fontSize = '.8rem';
     return el;
+  },
+  setGridColumnSize: function(el,size) {
+    el.className = 'columns medium-'+size;
   },
   getButton: function(text, icon, title) {
     var el = this._super(text,icon,title);
