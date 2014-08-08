@@ -44,8 +44,8 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
       emptySpan.setAttribute('class','checkbox-target');
       label.appendChild(emptySpan);
       group.appendChild(label);
-      input.style.position = 'relative';
-      input.style.cssFloat = 'left';
+//      input.style.position = 'relative';
+//      input.style.cssFloat = 'left';
     } 
     else {
       group.className += ' form-group';
