@@ -190,8 +190,6 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'string' && schema.format === 'imageFile') {
     return "imageFile";
-  } else {
-    console.log("schema.type is " + schema.type + "; schema.format is " + schema.format);
   }
 });
 // If the type is set and it's a basic type, use the primitive editor
