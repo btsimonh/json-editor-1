@@ -1801,15 +1801,15 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       this.is_dirty = false;
     else if (this.jsoneditor.options.show_errors === "change")
       this.is_dirty = true;
-
+    
     if (changed) {
       if (self.parent)
         self.parent.onChildEditorChange(self);
       else
         self.jsoneditor.onChange();
-    }
-
-    this.watch_listener();
+      }
+    if (this.watch_listener)
+      this.watch_listener();
     this.jsoneditor.notifyWatchers(this.path);
   },
   getNumColumns: function() {
@@ -2153,7 +2153,8 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
               self.is_dirty = true;
 
               self.refreshValue();
-              self.watch_listener();
+              if (self.watch_listener)
+                self.watch_listener();
               self.jsoneditor.notifyWatchers(self.path);
               if (self.parent)
                 self.parent.onChildEditorChange(self);
@@ -6407,8 +6408,8 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
       emptySpan.setAttribute('class','checkbox-target');
       label.appendChild(emptySpan);
       group.appendChild(label);
-      input.style.position = 'relative';
-      input.style.cssFloat = 'left';
+//      input.style.position = 'relative';
+//      input.style.cssFloat = 'left';
     } 
     else {
       group.className += ' form-group';
@@ -7359,8 +7360,6 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'string' && schema.format === 'imageFile') {
     return "imageFile";
-  } else {
-    console.log("schema.type is " + schema.type + "; schema.format is " + schema.format);
   }
 });
 // If the type is set and it's a basic type, use the primitive editor

@@ -58,15 +58,15 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       this.is_dirty = false;
     else if (this.jsoneditor.options.show_errors === "change")
       this.is_dirty = true;
-
+    
     if (changed) {
       if (self.parent)
         self.parent.onChildEditorChange(self);
       else
         self.jsoneditor.onChange();
-    }
-
-    this.watch_listener();
+      }
+    if (this.watch_listener)
+      this.watch_listener();
     this.jsoneditor.notifyWatchers(this.path);
   },
   getNumColumns: function() {
@@ -410,7 +410,8 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
               self.is_dirty = true;
 
               self.refreshValue();
-              self.watch_listener();
+              if (self.watch_listener)
+                self.watch_listener();
               self.jsoneditor.notifyWatchers(self.path);
               if (self.parent)
                 self.parent.onChildEditorChange(self);
