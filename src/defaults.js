@@ -166,6 +166,9 @@ JSONEditor.plugins = {
   },
   sceditor: {
 
+  },
+  select2: {
+    
   }
 };
 
@@ -219,12 +222,22 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
     return "base64";
   }
 });
+// Editor for uploading files
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if(schema.type === "string" && schema.format === "url" && schema.options && schema.options.upload === true) {
+    if(window.FileReader) return "upload";
+  }
+});
 // Use the table editor for arrays with the format set to `table`
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   // Type `array` with format set to `table`
   if(schema.type === "array" && schema.format ==="table") {
     return "table";
   }
+});
+// Use the `select` editor for dynamic enumSource enums
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if(schema.enumSource) return "select";
 });
 // Use the `enum` or `select` editors for schemas with enumerated properties
 JSONEditor.defaults.resolvers.unshift(function(schema) {
