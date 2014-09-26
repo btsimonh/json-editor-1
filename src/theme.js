@@ -63,6 +63,11 @@ JSONEditor.AbstractTheme = Class.extend({
     el.style.fontWeight = 'normal';
     return el;
   },
+  getRadioLabel: function(text) {
+    var el = this.getFormInputLabel(text);
+    el.setAttribute("class","radioLabel");
+    return el;
+  },
   getHeader: function(text) {
     var el = document.createElement('h3');
     if(typeof text === "string") {
@@ -82,6 +87,32 @@ JSONEditor.AbstractTheme = Class.extend({
       checkbox.setAttribute("checked",false); 
     }
     return checkbox;
+  },
+  getRadioInput: function(name, value, checked) {
+    var radio = this.getFormInputField('radio');
+    radio.setAttribute("name",name);
+    radio.setAttribute("value",value);
+    radio.setAttribute("class","radio");
+    if (checked) {
+     radio.setAttribute("checked",true); 
+    }
+    return radio;
+  },
+//getRadioGroupFormControl(this.path, self.enum_values, self.enum_display, this.schema.default)
+  getRadioGroupFormControl: function(name, options, titles, defaultVal) {
+    var holder = document.createElement("div");
+    holder.setAttribute("class","radio-holder");
+    for(var i=0; i<options.length; i++) {
+      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal))
+      var radioLabel = this.getRadioLabel(titles[i] || options[i]);
+      var uuid = $uuid();
+      radio.setAttribute("id",uuid);
+      radioLabel.setAttribute("for",uuid);
+      
+      holder.appendChild(radioLabel);
+      holder.appendChild(radio);
+    }
+    return holder;
   },
   getMultiCheckboxHolder: function(controls,label,description) {
     var el = document.createElement('div');
@@ -186,6 +217,9 @@ JSONEditor.AbstractTheme = Class.extend({
     return el;
   },
   getCheckboxDescription: function(text) {
+    return this.getDescription(text);
+  },
+  getRadioDescription: function(text) {
     return this.getDescription(text);
   },
   getFormInputDescription: function(text) {

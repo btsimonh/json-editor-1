@@ -60,6 +60,50 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
 
     return group;
   },
+  // <div class="btn-group" data-toggle="buttons">
+  //  <label class="btn btn-primary active">
+  //    <input type="radio" name="options" id="option1" checked> Option 1 (preselected)
+  //  </label>
+  //  <label class="btn btn-primary">
+  //    <input type="radio" name="options" id="option2"> Option 2
+  //  </label>
+  //  <label class="btn btn-primary">
+  //    <input type="radio" name="options" id="option3"> Option 3
+  //  </label>
+  //</div>
+  
+  getRadioLabel: function(text, isChecked) {
+    var el = this.getFormInputLabel(text);
+    el.setAttribute("class","btn btn-primary" + (isChecked?" active":""));
+    return el;
+  },
+  getRadioInput: function(name, value, checked) {
+    var radio = this.getFormInputField('radio');
+    radio.setAttribute("name",name);
+    radio.setAttribute("value",value);
+    if (checked) {
+     radio.setAttribute("checked",true);
+    }
+    radio.setAttribute("class","radio");
+    return radio;
+  },
+//getRadioGroupFormControl(this.path, self.enum_values, self.enum_display, this.schema.default)
+  getRadioGroupFormControl: function(name, options, titles, defaultVal) {
+    var holder = document.createElement("div");
+    holder.setAttribute("class","radio-holder btn-group");
+    holder.setAttribute("data-toggle","buttons");
+    for(var i=0; i<options.length; i++) {
+      var isChecked = (options[i] === defaultVal);
+      var radio = this.getRadioInput(name, options[i], isChecked);
+      var radioLabel = this.getRadioLabel(titles[i] || options[i], isChecked);
+      var uuid = $uuid();
+      radio.setAttribute("id",uuid);
+      radioLabel.setAttribute("for",uuid);
+      radioLabel.appendChild(radio);
+      holder.appendChild(radioLabel);
+    }
+    return holder;
+  },  
   getIndentedPanel: function() {
     var el = document.createElement('div');
     el.className = 'well well-sm';

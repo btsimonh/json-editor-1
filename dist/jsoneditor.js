@@ -5548,6 +5548,141 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
   }
 });
 
+JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
+  setValue: function () {
+    this._super();
+  },
+  register: function () {
+    if (this.editors) {
+      for (var i = 0; i < this.editors.length; i++) {
+        if (!this.editors[i])
+          continue;
+        this.editors[i].unregister();
+      }
+      if (this.editors[this.type])
+        this.editors[this.type].register();
+    }
+    this._super();
+  },
+  unregister: function () {
+    this._super();
+    if (this.editors) {
+      for (var i = 0; i < this.editors.length; i++) {
+        if (!this.editors[i])
+          continue;
+        this.editors[i].unregister();
+      }
+    }
+  },
+  getNumColumns: function () {
+    this._super();
+  },
+  typecast: function () {
+    this._super();
+  },
+  getValue: function () {
+    var checkedElem = document.querySelector("input[name=\"" + this.path + "\"]:checked");
+    if (checkedElem) {
+      this.value = checkedElem.value;
+    }
+    return this.value;
+  },
+  preBuild: function () {
+    var self = this;
+    this.input_type = 'radio';
+    this.enum_options = [];
+    this.enum_values = [];
+    this.enum_display = [];
+    this.editors = [];
+    this.validators = [];
+
+    // "type":"radio",
+    // "options": { "enum_titles": ["Swiss Cheese","Cheddar Cheese","Gouda Cheese"] },
+    // "enum": ["swiss","cheddar","gouda"],
+    // "default": "gouda"
+    // Enum options enumerated
+    if (this.schema.enum) {
+      var display = this.schema.options && this.schema.options.enum_titles || [];
+
+      $each(this.schema.enum, function (i, option) {
+        self.enum_options[i] = "" + option;
+        self.enum_display[i] = "" + (display[i] || option);
+        self.enum_values[i] = self.typecast(option);
+      });
+    }
+  },
+  build: function () {
+    var self = this;
+    var container = this.container;
+
+
+    if (!this.options.compact)
+      this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
+    this.container.appendChild(this.header);
+    if (this.schema.description)
+      this.description = this.theme.getFormInputDescription(this.schema.description);
+
+    if (this.options.compact)
+      this.container.setAttribute('class', this.container.getAttribute('class') + ' compact');
+
+    this.input = this.theme.getRadioGroupFormControl(this.path, self.enum_options, self.enum_display, this.schema.default);
+
+
+    if (this.schema.readOnly || this.schema.readonly) {
+      this.always_disabled = true;
+      this.input.disabled = true;
+    }
+
+    this.input.addEventListener('change', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      self.onInputChange();
+    });
+
+    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    this.container.appendChild(this.control);
+
+    this.value = this.schema.default;
+  },
+  onInputChange: function () {
+    this._super();
+  },
+  setupSelect2: function () {
+    this._super();
+  },
+  postBuild: function () {
+    this._super();
+  },
+  onWatchedFieldChange: function () {
+    this._super();
+  },
+  enable: function () {
+    if (this.editors) {
+      for (var i = 0; i < this.editors.length; i++) {
+        if (!this.editors[i])
+          continue;
+        this.editors[i].enable();
+      }
+    }
+    this.switcher.disabled = false;
+    this._super();
+  },
+  disable: function () {
+    if (this.editors) {
+      for (var i = 0; i < this.editors.length; i++) {
+        if (!this.editors[i])
+          continue;
+        this.editors[i].disable();
+      }
+    }
+    this.switcher.disabled = true;
+    this._super();
+  },
+  destroy: function () {
+    this._super();
+  }
+});
+
 JSONEditor.defaults.editors.multiselect = JSONEditor.AbstractEditor.extend({
   preBuild: function() {
     this._super();
@@ -6006,6 +6141,11 @@ JSONEditor.AbstractTheme = Class.extend({
     el.style.fontWeight = 'normal';
     return el;
   },
+  getRadioLabel: function(text) {
+    var el = this.getFormInputLabel(text);
+    el.setAttribute("class","radioLabel");
+    return el;
+  },
   getHeader: function(text) {
     var el = document.createElement('h3');
     if(typeof text === "string") {
@@ -6025,6 +6165,32 @@ JSONEditor.AbstractTheme = Class.extend({
       checkbox.setAttribute("checked",false); 
     }
     return checkbox;
+  },
+  getRadioInput: function(name, value, checked) {
+    var radio = this.getFormInputField('radio');
+    radio.setAttribute("name",name);
+    radio.setAttribute("value",value);
+    radio.setAttribute("class","radio");
+    if (checked) {
+     radio.setAttribute("checked",true); 
+    }
+    return radio;
+  },
+//getRadioGroupFormControl(this.path, self.enum_values, self.enum_display, this.schema.default)
+  getRadioGroupFormControl: function(name, options, titles, defaultVal) {
+    var holder = document.createElement("div");
+    holder.setAttribute("class","radio-holder");
+    for(var i=0; i<options.length; i++) {
+      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal))
+      var radioLabel = this.getRadioLabel(titles[i] || options[i]);
+      var uuid = $uuid();
+      radio.setAttribute("id",uuid);
+      radioLabel.setAttribute("for",uuid);
+      
+      holder.appendChild(radioLabel);
+      holder.appendChild(radio);
+    }
+    return holder;
   },
   getMultiCheckboxHolder: function(controls,label,description) {
     var el = document.createElement('div');
@@ -6129,6 +6295,9 @@ JSONEditor.AbstractTheme = Class.extend({
     return el;
   },
   getCheckboxDescription: function(text) {
+    return this.getDescription(text);
+  },
+  getRadioDescription: function(text) {
     return this.getDescription(text);
   },
   getFormInputDescription: function(text) {
@@ -6524,6 +6693,50 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
 
     return group;
   },
+  // <div class="btn-group" data-toggle="buttons">
+  //  <label class="btn btn-primary active">
+  //    <input type="radio" name="options" id="option1" checked> Option 1 (preselected)
+  //  </label>
+  //  <label class="btn btn-primary">
+  //    <input type="radio" name="options" id="option2"> Option 2
+  //  </label>
+  //  <label class="btn btn-primary">
+  //    <input type="radio" name="options" id="option3"> Option 3
+  //  </label>
+  //</div>
+  
+  getRadioLabel: function(text, isChecked) {
+    var el = this.getFormInputLabel(text);
+    el.setAttribute("class","btn btn-primary" + (isChecked?" active":""));
+    return el;
+  },
+  getRadioInput: function(name, value, checked) {
+    var radio = this.getFormInputField('radio');
+    radio.setAttribute("name",name);
+    radio.setAttribute("value",value);
+    if (checked) {
+     radio.setAttribute("checked",true);
+    }
+    radio.setAttribute("class","radio");
+    return radio;
+  },
+//getRadioGroupFormControl(this.path, self.enum_values, self.enum_display, this.schema.default)
+  getRadioGroupFormControl: function(name, options, titles, defaultVal) {
+    var holder = document.createElement("div");
+    holder.setAttribute("class","radio-holder btn-group");
+    holder.setAttribute("data-toggle","buttons");
+    for(var i=0; i<options.length; i++) {
+      var isChecked = (options[i] === defaultVal);
+      var radio = this.getRadioInput(name, options[i], isChecked);
+      var radioLabel = this.getRadioLabel(titles[i] || options[i], isChecked);
+      var uuid = $uuid();
+      radio.setAttribute("id",uuid);
+      radioLabel.setAttribute("for",uuid);
+      radioLabel.appendChild(radio);
+      holder.appendChild(radioLabel);
+    }
+    return holder;
+  },  
   getIndentedPanel: function() {
     var el = document.createElement('div');
     el.className = 'well well-sm';
@@ -7583,6 +7796,8 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.enum) {
     if(schema.type === "array" || schema.type === "object") {
       return "enum";
+    } else if (schema.type === "radio") {
+      return "radio";
     }
     else if(schema.type === "number" || schema.type === "integer" || schema.type === "string") {
       return "select";

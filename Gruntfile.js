@@ -36,6 +36,7 @@ module.exports = function(grunt) {
           'src/editors/enum.js',
           'src/editors/checkbox.js', 
           'src/editors/select.js',
+          'src/editors/radio.js', 
           'src/editors/multiselect.js',
           'src/editors/base64.js',
           'src/editors/upload.js',
