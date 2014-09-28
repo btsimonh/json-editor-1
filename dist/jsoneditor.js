@@ -6707,7 +6707,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   
   getRadioLabel: function(text, isChecked) {
     var el = this.getFormInputLabel(text);
-    el.setAttribute("class","btn btn-primary" + (isChecked?" active":""));
+    el.setAttribute("class","btn btn-primary radioLabel" + (isChecked?" active":""));
     return el;
   },
   getRadioInput: function(name, value, checked) {
@@ -7794,11 +7794,12 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 // Use the `enum` or `select` editors for schemas with enumerated properties
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.enum) {
-    if(schema.type === "array" || schema.type === "object") {
-      return "enum";
-    } else if (schema.type === "radio") {
+    if (schema.type === "radio") {
       return "radio";
     }
+    else if(schema.type === "array" || schema.type === "object") {
+      return "enum";
+    } 
     else if(schema.type === "number" || schema.type === "integer" || schema.type === "string") {
       return "select";
     }

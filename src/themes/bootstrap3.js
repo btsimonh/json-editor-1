@@ -74,7 +74,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   
   getRadioLabel: function(text, isChecked) {
     var el = this.getFormInputLabel(text);
-    el.setAttribute("class","btn btn-primary" + (isChecked?" active":""));
+    el.setAttribute("class","btn btn-primary radioLabel" + (isChecked?" active":""));
     return el;
   },
   getRadioInput: function(name, value, checked) {
