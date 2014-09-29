@@ -6181,7 +6181,7 @@ JSONEditor.AbstractTheme = Class.extend({
     var holder = document.createElement("div");
     holder.setAttribute("class","radio-holder");
     for(var i=0; i<options.length; i++) {
-      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal))
+      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal));
       var radioLabel = this.getRadioLabel(titles[i] || options[i]);
       var uuid = $uuid();
       radio.setAttribute("id",uuid);
@@ -6724,7 +6724,6 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   getRadioGroupFormControl: function(name, options, titles, defaultVal) {
     var holder = document.createElement("div");
     holder.setAttribute("class","radio-holder btn-group");
-    holder.setAttribute("data-toggle","buttons");
     for(var i=0; i<options.length; i++) {
       var isChecked = (options[i] === defaultVal);
       var radio = this.getRadioInput(name, options[i], isChecked);
@@ -6735,6 +6734,14 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
       radioLabel.appendChild(radio);
       holder.appendChild(radioLabel);
     }
+    holder.addEventListener("change",
+      function (evt) {
+          var oldActive = holder.querySelector('.btn.active');
+          if (oldActive) {
+              oldActive.classList.remove('active');
+          }
+          evt.target.parentElement.classList.add('active');
+      });
     return holder;
   },  
   getIndentedPanel: function() {

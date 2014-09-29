@@ -103,7 +103,7 @@ JSONEditor.AbstractTheme = Class.extend({
     var holder = document.createElement("div");
     holder.setAttribute("class","radio-holder");
     for(var i=0; i<options.length; i++) {
-      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal))
+      var radio = this.getRadioInput(name, options[i], (options[i] === defaultVal));
       var radioLabel = this.getRadioLabel(titles[i] || options[i]);
       var uuid = $uuid();
       radio.setAttribute("id",uuid);
