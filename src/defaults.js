@@ -145,6 +145,12 @@ JSONEditor.defaults.languages.en = {
    */
   error_required: "Object is missing the required property '{{0}}'",
   /**
+   * When a property is sometimes required, dependant on the value of another
+   * property (requiredIf).
+   * @variables This key takes one variable: The title of the property that is required.
+   */
+  error_requiredIf: "{{0}} is required",
+  /**
    * When there is an additional property is set whereas there should be none
    * @variables This key takes one variable: The name of the additional property
    */

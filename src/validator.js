@@ -51,6 +51,105 @@ JSONEditor.Validator = Class.extend({
       }
     }
 
+  /* "requiredIf" is for cross-dependencies, when one property is required only if
+   * another property has a certain (specified) value.
+   * E.g. a cross-references between an enum "Cheese" and a "cheeseDetails" array:
+   *   "Cheese": {
+   *     "type": "string",
+   *      "title": "Do you like cheese?",
+   *      "enum":["yes","no"]
+   *    },
+   *    "cheeseDetails": {
+   *      "type": "array",
+   *      "title": "Reason for liking cheese",
+   *      "requiredIf": {
+   *          "propertyPath": "Cheese",
+   *          "propertyPathMatches": {
+   *              "matchType": "string",
+   *              "matchExpression": "yes"
+   *          },
+   *          "hideOtherwise": true,
+   *          "disableOtherwise": true
+   *      },
+   *      "items": {
+   *        "type": "string",
+   *        "minLength": 3,
+   *        "title": "Reason for liking cheese"
+   *      }
+   *    }
+   *    
+   * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
+   *  it is hidden and disabled.
+   */
+    if (schema.requiredIf) {
+      var hasError = true, // start by assuming that this is required and not supplied.
+          valueMatch = false, // start by assuming the values DONT match
+          showThisField = false; // start by assuming this field should be hidden
+      
+      // we have a cross-reference requirement. Check the value of the associated path.
+      //  schema.requiredIf.propertyPath
+      if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
+        // what type is this value?
+        var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
+        if (type) {
+          // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
+          if (schema.requiredIf.propertyPathMatches.matchType === type) {
+            // both the same type, now check values
+            valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+            if (valueMatch === true) {
+              // this one is definitely required. So check that we have it.
+              showThisField = true;
+              
+              if (schema.type === "array") {
+                // make sure we have at least one
+                if (value && (value.length > 0)) {
+                  // we're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              } else {
+                // not an array. Check that value is "truthy".
+                if (!!value) {
+                  // value is "truthy". We're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              }
+            } else {
+              // the value we have differs from the matchExpression. So it's not required. we're good. return.
+              hasError = false;
+            }
+          }
+          
+        }
+      }
+      if (showThisField) {
+        if (schema.requiredIf.hideOtherwise) {
+          // make sure it's shown
+          $("[data-schemapath=\"" + path + "\"]").show();
+        }
+        if (schema.requiredIf.disableOtherwise) {
+          // make sure it's enabled
+          this.jsoneditor.getEditor(path).enable();
+        }
+      } else {
+        if (schema.requiredIf.hideOtherwise) {
+          // We need to hide this one.
+          $("[data-schemapath=\"" + path + "\"]").hide();
+        }
+        if (schema.requiredIf.disableOtherwise) {
+          // we need to disable this one.
+          this.jsoneditor.getEditor(path).disable();
+        }
+      }
+      if (hasError) {
+        // if we get to this point, it didn't work out.
+        errors.push({
+          path: path,
+          property: 'requiredIf',
+          message: this.translate("error_requiredIf", [schema.title])
+        });
+      }
+    }
+
     // `enum`
     if(schema.enum) {
       valid = false;

@@ -61,23 +61,23 @@
                 <div>
                     <label>Object Layout</label>
                     <select id='object_layout' class='form-control'>
-                        <option value='normal'>normal</option>
+                      <option value='normal' selected="">normal</option>
                         <option value='grid'>grid</option>
                     </select>
                 </div>
                 <div>
                     <label>Show Errors</label>
                     <select id='show_errors' class='form-control'>
-                        <option value='interaction'>On Interaction</option>
+                      <option value='interaction'>On Interaction</option>
                         <option value='change'>On Field Change</option>
-                        <option value='always'>Always</option>
+                        <option value='always'  selected="selected">Always</option>
                         <option value='never'>Never</option>
                     </select>
                 </div>
                 <div>
                     <label>Boolean options</label>
                     <select multiple size=9 id='boolean_options' style='width: 100%;' class='form-control'>
-                        <option value='required_by_default'>Object properties required by default</option>
+                      <option value='required_by_default' selected="">Object properties required by default</option>
                         <option value='no_additional_properties'>No additional object properties</option>
                         <option value='ajax'>Allow loading schemas via Ajax</option>
                         <option value='disable_edit_json'>Disable "Edit JSON" buttons</option>
@@ -162,23 +162,35 @@ editor.on("change",  function() {
     // Default starting schema
     if(!schema) {
       schema = {
-        "type": "object",
-        "theme": "bootstrap3",
-        "title": "Daily Prestart and HSE Inspections Checklist",
-        "formNumber": "FM009-a",
-        "instructionsHeading": "",
-        "instructions": "",
-        "properties": {
-          "Cheese": {
-            "type": "radio",
-            "options": {
-              "enum_titles": ["Swiss Cheese", "Cheddar Cheese", "Gouda Cheese"]
-            },
-            "enum": ["swiss", "cheddar", "gouda"],
-            "default": "gouda"
-          }
-        }
-      };
+  "type": "object",
+  "theme": "bootstrap3",
+  "title": "Blessed Are The Cheese-Makers",
+  "properties": {
+    "Cheese": {
+      "type": "string",
+      "title": "Do you like cheese?",
+      "enum":["yes","no"]
+    },
+    "cheeseDetails": {
+      "type": "array",
+      "title": "Reason for liking cheese",
+      "requiredIf": {
+          "propertyPath": "Cheese",
+          "propertyPathMatches": {
+              "matchType": "string",
+              "matchExpression": "yes"
+          },
+          "hideOtherwise": true,
+          "disableOtherwise": true
+      },
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "title": "Reason for liking cheese"
+      }
+    }
+  }
+};
     }
 
     // Divs/textareas on the page
@@ -343,14 +355,14 @@ editor.on("change",  function() {
     }
  
     // Set options from direct link
-    setTheme((window.location.href.match(/[?&]theme=([^&]+)/)||[])[1] || 'bootstrap2', true);
+    setTheme((window.location.href.match(/[?&]theme=([^&]+)/)||[])[1] || 'bootstrap3', true);
     
     setIconlib((window.location.href.match(/[?&]iconlib=([^&]*)/)||[null,'fontawesome4'])[1], true);
     
     document.getElementById('object_layout').value = (window.location.href.match(/[?&]object_layout=([^&]+)/)||[])[1] || 'normal';
     JSONEditor.defaults.options.object_layout = document.getElementById('object_layout').value;
     
-    document.getElementById('show_errors').value = (window.location.href.match(/[?&]show_errors=([^&]+)/)||[])[1] || 'interaction';
+    document.getElementById('show_errors').value = (window.location.href.match(/[?&]show_errors=([^&]+)/)||[])[1] || 'always';
     JSONEditor.defaults.options.show_errors = document.getElementById('show_errors').value;
     
     var boolean_options = document.getElementById('boolean_options').children;

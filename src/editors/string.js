@@ -284,8 +284,8 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     }
     if (this.schema.autocomplete) {
       if (typeof $ !== "undefined") { // if we have jquery
-        // attach autocomplete data
-        if (this.schema.autocompleteData) {
+        // attach autocomplete data, if it exists and JqueryUI is available
+        if (this.schema.autocompleteData && !!$(this.input).autocomplete) {
           $(this.input).autocomplete(
                   {
                     "source": this.schema.autocompleteData,
