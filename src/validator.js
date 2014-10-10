@@ -10,7 +10,7 @@ JSONEditor.Validator = Class.extend({
   },
   _validateSchema: function(schema,value,path,fullSchemaValue) {
     var errors = [];
-    var valid, i, j;
+    var valid, i, j, thisEditor;
     var stringified = JSON.stringify(value);
 
     path = path || 'root';
@@ -21,227 +21,170 @@ JSONEditor.Validator = Class.extend({
     /*
      * Type Agnostic Validation
      */
+    /* "requiredIf" is for cross-dependencies, when one property is required only if
+     * another property has a certain (specified) value.
+     * E.g. a cross-references between an enum "Cheese" and a "cheeseDetails" array:
+     *   "Cheese": {
+     *     "type": "string",
+     *      "title": "Do you like cheese?",
+     *      "enum":["yes","no"]
+     *    },
+     *    "cheeseDetails": {
+     *      "type": "array",
+     *      "title": "Reason for liking cheese",
+     *      "requiredIf": {
+     *          "propertyPath": "Cheese",
+     *          "propertyPathMatches": {
+     *              "matchType": "string",
+     *              "matchExpression": "yes"
+     *          },
+     *          "hideOtherwise": true,
+     *          "disableOtherwise": true
+     *      },
+     *      "items": {
+     *        "type": "string",
+     *        "minLength": 3,
+     *        "title": "Reason for liking cheese"
+     *      }
+     *    }
+     *    
+     * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
+     *  it is hidden and disabled.
+     */
+      if (schema.requiredIf) {
+        var hasError = true, // start by assuming that this is required and not supplied.
+            valueMatch = false, // start by assuming the values DONT match
+            showThisField = false; // start by assuming this field should be hidden
 
-    // Version 3 `required`
-    if(schema.required && schema.required === true) {
-      if(typeof value === "undefined") {
-        errors.push({
-          path: path,
-          property: 'required',
-          message: this.translate("error_notset")
-        });
+        // we have a cross-reference requirement. Check the value of the associated path.
+        //  schema.requiredIf.propertyPath
+        if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
+          // what type is this value?
+          var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
+          if (type) {
+            // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
+            if (schema.requiredIf.propertyPathMatches.matchType === type) {
+              // both the same type, now check values
+              valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+              if (valueMatch === true) {
+                // this one is definitely required. So check that we have it.
+                showThisField = true;
 
-        // Can't do any more validation at this point
-        return errors;
-      }
-    }
-    // Value not defined
-    else if(typeof value === "undefined") {
-      // If required_by_default is set, all fields are required
-      if(this.jsoneditor.options.required_by_default) {
-        errors.push({
-          path: path,
-          property: 'required',
-          message: this.translate("error_notset")
-        });
-      }
-      // Not required, no further validation needed
-      else {
-        return errors;
-      }
-    }
-
-  /* "requiredIf" is for cross-dependencies, when one property is required only if
-   * another property has a certain (specified) value.
-   * E.g. a cross-references between an enum "Cheese" and a "cheeseDetails" array:
-   *   "Cheese": {
-   *     "type": "string",
-   *      "title": "Do you like cheese?",
-   *      "enum":["yes","no"]
-   *    },
-   *    "cheeseDetails": {
-   *      "type": "array",
-   *      "title": "Reason for liking cheese",
-   *      "requiredIf": {
-   *          "propertyPath": "Cheese",
-   *          "propertyPathMatches": {
-   *              "matchType": "string",
-   *              "matchExpression": "yes"
-   *          },
-   *          "hideOtherwise": true,
-   *          "disableOtherwise": true
-   *      },
-   *      "items": {
-   *        "type": "string",
-   *        "minLength": 3,
-   *        "title": "Reason for liking cheese"
-   *      }
-   *    }
-   *    
-   * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
-   *  it is hidden and disabled.
-   */
-    if (schema.requiredIf) {
-      var hasError = true, // start by assuming that this is required and not supplied.
-          valueMatch = false, // start by assuming the values DONT match
-          showThisField = false; // start by assuming this field should be hidden
-      
-      // we have a cross-reference requirement. Check the value of the associated path.
-      //  schema.requiredIf.propertyPath
-      if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
-        // what type is this value?
-        var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
-        if (type) {
-          // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
-          if (schema.requiredIf.propertyPathMatches.matchType === type) {
-            // both the same type, now check values
-            valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
-            if (valueMatch === true) {
-              // this one is definitely required. So check that we have it.
-              showThisField = true;
-              
-              if (schema.type === "array") {
-                // make sure we have at least one
-                if (value && (value.length > 0)) {
-                  // we're good. return.
-                  hasError = false;
-                } // else value is no good, will fall through to errors.push
+                if (schema.type === "array") {
+                  // make sure we have at least one
+                  if (value && (value.length > 0)) {
+                    // we're good. return.
+                    hasError = false;
+                  } // else value is no good, will fall through to errors.push
+                } else {
+                  // not an array. Check that value is "truthy".
+                  if (!!value) {
+                    // value is "truthy". We're good. return.
+                    hasError = false;
+                  } // else value is no good, will fall through to errors.push
+                }
               } else {
-                // not an array. Check that value is "truthy".
-                if (!!value) {
-                  // value is "truthy". We're good. return.
-                  hasError = false;
-                } // else value is no good, will fall through to errors.push
+                // the value we have differs from the matchExpression. So it's not required. we're good. return.
+                hasError = false;
               }
-            } else {
-              // the value we have differs from the matchExpression. So it's not required. we're good. return.
-              hasError = false;
             }
+
           }
-          
+        }
+        if (showThisField) {
+          if (schema.requiredIf.hideOtherwise) {
+            // make sure it's shown
+            $("[data-schemapath=\"" + path + "\"]").show();
+          }
+          if (schema.requiredIf.disableOtherwise) {
+            // make sure it's enabled
+            this.jsoneditor.getEditor(path).enable();
+          }
+        } else {
+          if (schema.requiredIf.hideOtherwise) {
+            // We need to hide this one.
+            $("[data-schemapath=\"" + path + "\"]").hide();
+          }
+          if (schema.requiredIf.disableOtherwise) {
+            // we need to disable this one.
+            this.jsoneditor.getEditor(path).disable();
+          }
+        }
+        if (hasError) {
+          // if we get to this point, it didn't work out.
+          errors.push({
+            path: path,
+            property: 'requiredIf',
+            message: this.translate("error_requiredIf", [schema.title])
+          });
         }
       }
-      if (showThisField) {
-        if (schema.requiredIf.hideOtherwise) {
-          // make sure it's shown
-          $("[data-schemapath=\"" + path + "\"]").show();
-        }
-        if (schema.requiredIf.disableOtherwise) {
-          // make sure it's enabled
-          this.jsoneditor.getEditor(path).enable();
-        }
-      } else {
-        if (schema.requiredIf.hideOtherwise) {
-          // We need to hide this one.
-          $("[data-schemapath=\"" + path + "\"]").hide();
-        }
-        if (schema.requiredIf.disableOtherwise) {
-          // we need to disable this one.
-          this.jsoneditor.getEditor(path).disable();
+    thisEditor = this.jsoneditor.getEditor(path);
+    if (thisEditor && !thisEditor.disabled) {
+      // Version 3 `required`
+      if(schema.required && schema.required === true) {
+        if(typeof value === "undefined") {
+          errors.push({
+            path: path,
+            property: 'required',
+            message: this.translate("error_notset")
+          });
+
+          // Can't do any more validation at this point
+          return errors;
         }
       }
-      if (hasError) {
-        // if we get to this point, it didn't work out.
-        errors.push({
-          path: path,
-          property: 'requiredIf',
-          message: this.translate("error_requiredIf", [schema.title])
-        });
-      }
-    }
-
-    // `enum`
-    if(schema.enum) {
-      valid = false;
-      for(i=0; i<schema.enum.length; i++) {
-        if(stringified === JSON.stringify(schema.enum[i])) valid = true;
-      }
-      if(!valid) {
-        errors.push({
-          path: path,
-          property: 'enum',
-          message: this.translate("error_enum")
-        });
-      }
-    }
-
-    // `extends` (version 3)
-    if(schema.extends) {
-      for(i=0; i<schema.extends.length; i++) {
-        errors = errors.concat(this._validateSchema(schema.extends[i],value,path,fullSchemaValue));
-      }
-    }
-
-    // `allOf`
-    if(schema.allOf) {
-      for(i=0; i<schema.allOf.length; i++) {
-        errors = errors.concat(this._validateSchema(schema.allOf[i],value,path,fullSchemaValue));
-      }
-    }
-
-    // `anyOf`
-    if(schema.anyOf) {
-      valid = false;
-      for(i=0; i<schema.anyOf.length; i++) {
-        if(!this._validateSchema(schema.anyOf[i],value,path,fullSchemaValue).length) {
-          valid = true;
-          break;
+      // Value not defined
+      else if(typeof value === "undefined") {
+        // If required_by_default is set, all fields are required
+        if(this.jsoneditor.options.required_by_default) {
+          errors.push({
+            path: path,
+            property: 'required',
+            message: this.translate("error_notset")
+          });
+        }
+        // Not required, no further validation needed
+        else {
+          return errors;
         }
       }
-      if(!valid) {
-        errors.push({
-          path: path,
-          property: 'anyOf',
-          message: this.translate('error_anyOf')
-        });
-      }
-    }
 
-    // `oneOf`
-    if(schema.oneOf) {
-      valid = 0;
-      var oneof_errors = [];
-      for(i=0; i<schema.oneOf.length; i++) {
-        // Set the error paths to be path.oneOf[i].rest.of.path
-        var tmp = this._validateSchema(schema.oneOf[i],value,path,fullSchemaValue);
-        if(!tmp.length) {
-          valid++;
-        }
 
-        for(j=0; j<tmp.length; j++) {
-          tmp[j].path = path+'.oneOf['+i+']'+tmp[j].path.substr(path.length);
-        }
-        oneof_errors = oneof_errors.concat(tmp);
-
-      }
-      if(valid !== 1) {
-        errors.push({
-          path: path,
-          property: 'oneOf',
-          message: this.translate('error_oneOf', [valid])
-        });
-        errors = errors.concat(oneof_errors);
-      }
-    }
-
-    // `not`
-    if(schema.not) {
-      if(!this._validateSchema(schema.not,value,path,fullSchemaValue).length) {
-        errors.push({
-          path: path,
-          property: 'not',
-          message: this.translate('error_not')
-        });
-      }
-    }
-
-    // `type` (both Version 3 and Version 4 support)
-    if(schema.type) {
-      // Union type
-      if(Array.isArray(schema.type)) {
+      // `enum`
+      if(schema.enum) {
         valid = false;
-        for(i=0;i<schema.type.length;i++) {
-          if(this._checkType(schema.type[i], value)) {
+        for(i=0; i<schema.enum.length; i++) {
+          if(stringified === JSON.stringify(schema.enum[i])) valid = true;
+        }
+        if(!valid) {
+          errors.push({
+            path: path,
+            property: 'enum',
+            message: this.translate("error_enum")
+          });
+        }
+      }
+
+      // `extends` (version 3)
+      if(schema.extends) {
+        for(i=0; i<schema.extends.length; i++) {
+          errors = errors.concat(this._validateSchema(schema.extends[i],value,path,fullSchemaValue));
+        }
+      }
+
+      // `allOf`
+      if(schema.allOf) {
+        for(i=0; i<schema.allOf.length; i++) {
+          errors = errors.concat(this._validateSchema(schema.allOf[i],value,path,fullSchemaValue));
+        }
+      }
+
+      // `anyOf`
+      if(schema.anyOf) {
+        valid = false;
+        for(i=0; i<schema.anyOf.length; i++) {
+          if(!this._validateSchema(schema.anyOf[i],value,path,fullSchemaValue).length) {
             valid = true;
             break;
           }
@@ -249,368 +192,426 @@ JSONEditor.Validator = Class.extend({
         if(!valid) {
           errors.push({
             path: path,
-            property: 'type',
-            message: this.translate('error_type_union')
+            property: 'anyOf',
+            message: this.translate('error_anyOf')
           });
         }
       }
-      // Simple type
-      else {
-        if(!this._checkType(schema.type, value)) {
-          errors.push({
-            path: path,
-            property: 'type',
-            message: this.translate('error_type', [schema.type])
-          });
-        }
-      }
-    }
 
-
-    // `disallow` (version 3)
-    if(schema.disallow) {
-      // Union type
-      if(Array.isArray(schema.disallow)) {
-        valid = true;
-        for(i=0;i<schema.disallow.length;i++) {
-          if(this._checkType(schema.disallow[i], value)) {
-            valid = false;
-            break;
+      // `oneOf`
+      if(schema.oneOf) {
+        valid = 0;
+        var oneof_errors = [];
+        for(i=0; i<schema.oneOf.length; i++) {
+          // Set the error paths to be path.oneOf[i].rest.of.path
+          var tmp = this._validateSchema(schema.oneOf[i],value,path,fullSchemaValue);
+          if(!tmp.length) {
+            valid++;
           }
+
+          for(j=0; j<tmp.length; j++) {
+            tmp[j].path = path+'.oneOf['+i+']'+tmp[j].path.substr(path.length);
+          }
+          oneof_errors = oneof_errors.concat(tmp);
+
         }
-        if(!valid) {
+        if(valid !== 1) {
           errors.push({
             path: path,
-            property: 'disallow',
-            message: this.translate('error_disallow_union')
+            property: 'oneOf',
+            message: this.translate('error_oneOf', [valid])
           });
+          errors = errors.concat(oneof_errors);
         }
       }
-      // Simple type
-      else {
-        if(this._checkType(schema.disallow, value)) {
+
+      // `not`
+      if(schema.not) {
+        if(!this._validateSchema(schema.not,value,path,fullSchemaValue).length) {
           errors.push({
             path: path,
-            property: 'disallow',
-            message: this.translate('error_disallow', [schema.disallow])
-          });
-        }
-      }
-    }
-
-    /*
-     * Type Specific Validation
-     */
-
-    // Number Specific Validation
-    if(typeof value === "number") {
-      // `multipleOf` and `divisibleBy`
-      if(schema.multipleOf || schema.divisibleBy) {
-        valid = value / (schema.multipleOf || schema.divisibleBy);
-        if(valid !== Math.floor(valid)) {
-          errors.push({
-            path: path,
-            property: schema.multipleOf? 'multipleOf' : 'divisibleBy',
-            message: this.translate('error_multipleOf', [schema.multipleOf || schema.divisibleBy])
+            property: 'not',
+            message: this.translate('error_not')
           });
         }
       }
 
-      // `maximum`
-      if(schema.hasOwnProperty('maximum')) {
-        if(schema.exclusiveMaximum && value >= schema.maximum) {
-          errors.push({
-            path: path,
-            property: 'maximum',
-            message: this.translate('error_maximum_excl', [schema.maximum])
-          });
-        }
-        else if(!schema.exclusiveMaximum && value > schema.maximum) {
-          errors.push({
-            path: path,
-            property: 'maximum',
-            message: this.translate('error_maximum_incl', [schema.maximum])
-          });
-        }
-      }
-
-      // `minimum`
-      if(schema.hasOwnProperty('minimum')) {
-        if(schema.exclusiveMinimum && value <= schema.minimum) {
-          errors.push({
-            path: path,
-            property: 'minimum',
-            message: this.translate('error_minimum_excl', [schema.minimum])
-          });
-        }
-        else if(!schema.exclusiveMinimum && value < schema.minimum) {
-          errors.push({
-            path: path,
-            property: 'minimum',
-            message: this.translate('error_minimum_incl', [schema.minimum])
-          });
-        }
-      }
-    }
-    // String specific validation
-    else if(typeof value === "string") {
-      // `maxLength`
-      if(schema.maxLength) {
-        if((value+"").length > schema.maxLength) {
-          errors.push({
-            path: path,
-            property: 'maxLength',
-            message: this.translate('error_maxLength', [schema.maxLength])
-          });
-        }
-      }
-
-      // `minLength`
-      if(schema.minLength) {
-        if((value+"").length < schema.minLength) {          
-          errors.push({
-            path: path,
-            property: 'minLength',
-            message: this.translate((schema.minLength===1?'error_notempty':'error_minLength'), [schema.minLength])
-          });
-        }
-      }
-
-      // `pattern`
-      if(schema.pattern) {
-        if(!(new RegExp(schema.pattern)).test(value)) {
-          errors.push({
-            path: path,
-            property: 'pattern',
-            message: this.translate('error_pattern')
-          });
-        }
-      }
-    }
-    // Array specific validation
-    else if(typeof value === "object" && value !== null && Array.isArray(value)) {
-      // `items` and `additionalItems`
-      if(schema.items) {
-        // `items` is an array
-        if(Array.isArray(schema.items)) {
-          for(i=0; i<value.length; i++) {
-            // If this item has a specific schema tied to it
-            // Validate against it
-            if(schema.items[i]) {
-              errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i,fullSchemaValue));
-            }
-            // If all additional items are allowed
-            else if(schema.additionalItems === true) {
-              break;
-            }
-            // If additional items is a schema
-            // TODO: Incompatibility between version 3 and 4 of the spec
-            else if(schema.additionalItems) {
-              errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i,fullSchemaValue));
-            }
-            // If no additional items are allowed
-            else if(schema.additionalItems === false) {
-              errors.push({
-                path: path,
-                property: 'additionalItems',
-                message: this.translate('error_additionalItems')
-              });
-              break;
-            }
-            // Default for `additionalItems` is an empty schema
-            else {
+      // `type` (both Version 3 and Version 4 support)
+      if(schema.type) {
+        // Union type
+        if(Array.isArray(schema.type)) {
+          valid = false;
+          for(i=0;i<schema.type.length;i++) {
+            if(this._checkType(schema.type[i], value)) {
+              valid = true;
               break;
             }
           }
+          if(!valid) {
+            errors.push({
+              path: path,
+              property: 'type',
+              message: this.translate('error_type_union')
+            });
+          }
         }
-        // `items` is a schema
+        // Simple type
         else {
-          // Each item in the array must validate against the schema
-          for(i=0; i<value.length; i++) {
-            errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i,fullSchemaValue));
-          }
-        }
-      }
-
-      // `maxItems`
-      if(schema.maxItems) {
-        if(value.length > schema.maxItems) {
-          errors.push({
-            path: path,
-            property: 'maxItems',
-            message: this.translate('error_maxItems', [schema.maxItems])
-          });
-        }
-      }
-
-      // `minItems`
-      if(schema.minItems) {
-        if(value.length < schema.minItems) {
-          errors.push({
-            path: path,
-            property: 'minItems',
-            message: this.translate('error_minItems', [schema.minItems])
-          });
-        }
-      }
-
-      // `uniqueItems`
-      if(schema.uniqueItems) {
-        var seen = {};
-        for(i=0; i<value.length; i++) {
-          valid = JSON.stringify(value[i]);
-          if(seen[valid]) {
+          if(!this._checkType(schema.type, value)) {
             errors.push({
               path: path,
-              property: 'uniqueItems',
-              message: this.translate('error_uniqueItems')
-            });
-            break;
-          }
-          seen[valid] = true;
-        }
-      }
-    }
-    // Object specific validation
-    else if(typeof value === "object" && value !== null) {
-      // `maxProperties`
-      if(schema.maxProperties) {
-        valid = 0;
-        for(i in value) {
-          if(!value.hasOwnProperty(i)) continue;
-          valid++;
-        }
-        if(valid > schema.maxProperties) {
-          errors.push({
-            path: path,
-            property: 'maxProperties',
-            message: this.translate('error_maxProperties', [schema.maxProperties])
-          });
-        }
-      }
-
-      // `minProperties`
-      if(schema.minProperties) {
-        valid = 0;
-        for(i in value) {
-          if(!value.hasOwnProperty(i)) continue;
-          valid++;
-        }
-        if(valid < schema.minProperties) {
-          errors.push({
-            path: path,
-            property: 'minProperties',
-            message: this.translate('error_minProperties', [schema.minProperties])
-          });
-        }
-      }
-
-      // Version 4 `required`
-      if(schema.required && Array.isArray(schema.required)) {
-        for(i=0; i<schema.required.length; i++) {
-          if(typeof value[schema.required[i]] === "undefined") {
-            errors.push({
-              path: path,
-              property: 'required',
-              message: this.translate('error_required', [schema.required[i]])
+              property: 'type',
+              message: this.translate('error_type', [schema.type])
             });
           }
         }
       }
 
-      // `properties`
-      var validated_properties = {};
-      if(schema.properties) {
-        for(i in schema.properties) {
-          if(!schema.properties.hasOwnProperty(i)) continue;
-          validated_properties[i] = true;
-          errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i,fullSchemaValue));
-        }
-      }
 
-      // `patternProperties`
-      if(schema.patternProperties) {
-        for(i in schema.patternProperties) {
-          if(!schema.patternProperties.hasOwnProperty(i)) continue;
-
-          var regex = new RegExp(i);
-
-          // Check which properties match
-          for(j in value) {
-            if(!value.hasOwnProperty(j)) continue;
-            if(regex.test(j)) {
-              validated_properties[j] = true;
-              errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j,fullSchemaValue));
+      // `disallow` (version 3)
+      if(schema.disallow) {
+        // Union type
+        if(Array.isArray(schema.disallow)) {
+          valid = true;
+          for(i=0;i<schema.disallow.length;i++) {
+            if(this._checkType(schema.disallow[i], value)) {
+              valid = false;
+              break;
             }
+          }
+          if(!valid) {
+            errors.push({
+              path: path,
+              property: 'disallow',
+              message: this.translate('error_disallow_union')
+            });
+          }
+        }
+        // Simple type
+        else {
+          if(this._checkType(schema.disallow, value)) {
+            errors.push({
+              path: path,
+              property: 'disallow',
+              message: this.translate('error_disallow', [schema.disallow])
+            });
           }
         }
       }
 
-      // The no_additional_properties option currently doesn't work with extended schemas that use oneOf or anyOf
-      if(typeof schema.additionalProperties === "undefined" && this.jsoneditor.options.no_additional_properties && !schema.oneOf && !schema.anyOf) {
-        schema.additionalProperties = false;
-      }
+      /*
+       * Type Specific Validation
+       */
 
-      // `additionalProperties`
-      if(typeof schema.additionalProperties !== "undefined") {
-        for(i in value) {
-          if(!value.hasOwnProperty(i)) continue;
-          if(!validated_properties[i]) {
-            // No extra properties allowed
-            if(!schema.additionalProperties) {
-              errors.push({
-                path: path,
-                property: 'additionalProperties',
-                message: this.translate('error_additional_properties', [i])
-              });
-              break;
-            }
-            // Allowed
-            else if(schema.additionalProperties === true) {
-              break;
-            }
-            // Must match schema
-            // TODO: incompatibility between version 3 and 4 of the spec
-            else {
-              errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i,fullSchemaValue));
-            }
+      // Number Specific Validation
+      if(typeof value === "number") {
+        // `multipleOf` and `divisibleBy`
+        if(schema.multipleOf || schema.divisibleBy) {
+          valid = value / (schema.multipleOf || schema.divisibleBy);
+          if(valid !== Math.floor(valid)) {
+            errors.push({
+              path: path,
+              property: schema.multipleOf? 'multipleOf' : 'divisibleBy',
+              message: this.translate('error_multipleOf', [schema.multipleOf || schema.divisibleBy])
+            });
+          }
+        }
+
+        // `maximum`
+        if(schema.hasOwnProperty('maximum')) {
+          if(schema.exclusiveMaximum && value >= schema.maximum) {
+            errors.push({
+              path: path,
+              property: 'maximum',
+              message: this.translate('error_maximum_excl', [schema.maximum])
+            });
+          }
+          else if(!schema.exclusiveMaximum && value > schema.maximum) {
+            errors.push({
+              path: path,
+              property: 'maximum',
+              message: this.translate('error_maximum_incl', [schema.maximum])
+            });
+          }
+        }
+
+        // `minimum`
+        if(schema.hasOwnProperty('minimum')) {
+          if(schema.exclusiveMinimum && value <= schema.minimum) {
+            errors.push({
+              path: path,
+              property: 'minimum',
+              message: this.translate('error_minimum_excl', [schema.minimum])
+            });
+          }
+          else if(!schema.exclusiveMinimum && value < schema.minimum) {
+            errors.push({
+              path: path,
+              property: 'minimum',
+              message: this.translate('error_minimum_incl', [schema.minimum])
+            });
           }
         }
       }
+      // String specific validation
+      else if(typeof value === "string") {
+        // `maxLength`
+        if(schema.maxLength) {
+          if((value+"").length > schema.maxLength) {
+            errors.push({
+              path: path,
+              property: 'maxLength',
+              message: this.translate('error_maxLength', [schema.maxLength])
+            });
+          }
+        }
 
-      // `dependencies`
-      if(schema.dependencies) {
-        for(i in schema.dependencies) {
-          if(!schema.dependencies.hasOwnProperty(i)) continue;
+        // `minLength`
+        if(schema.minLength) {
+          if((value+"").length < schema.minLength) {          
+            errors.push({
+              path: path,
+              property: 'minLength',
+              message: this.translate((schema.minLength===1?'error_notempty':'error_minLength'), [schema.minLength])
+            });
+          }
+        }
 
-          // Doesn't need to meet the dependency
-          if(typeof value[i] === "undefined") continue;
-
-          // Property dependency
-          if(Array.isArray(schema.dependencies[i])) {
-            for(j=0; j<schema.dependencies[i].length; j++) {
-              if(typeof value[schema.dependencies[i][j]] === "undefined") {
+        // `pattern`
+        if(schema.pattern) {
+          if(!(new RegExp(schema.pattern)).test(value)) {
+            errors.push({
+              path: path,
+              property: 'pattern',
+              message: this.translate('error_pattern')
+            });
+          }
+        }
+      }
+      // Array specific validation
+      else if(typeof value === "object" && value !== null && Array.isArray(value)) {
+        // `items` and `additionalItems`
+        if(schema.items) {
+          // `items` is an array
+          if(Array.isArray(schema.items)) {
+            for(i=0; i<value.length; i++) {
+              // If this item has a specific schema tied to it
+              // Validate against it
+              if(schema.items[i]) {
+                errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i,fullSchemaValue));
+              }
+              // If all additional items are allowed
+              else if(schema.additionalItems === true) {
+                break;
+              }
+              // If additional items is a schema
+              // TODO: Incompatibility between version 3 and 4 of the spec
+              else if(schema.additionalItems) {
+                errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i,fullSchemaValue));
+              }
+              // If no additional items are allowed
+              else if(schema.additionalItems === false) {
                 errors.push({
                   path: path,
-                  property: 'dependencies',
-                  message: this.translate('error_dependency', [schema.dependencies[i][j]])
+                  property: 'additionalItems',
+                  message: this.translate('error_additionalItems')
                 });
+                break;
+              }
+              // Default for `additionalItems` is an empty schema
+              else {
+                break;
               }
             }
           }
-          // Schema dependency
+          // `items` is a schema
           else {
-            errors = errors.concat(this._validateSchema(schema.dependencies[i],value,path,fullSchemaValue));
+            // Each item in the array must validate against the schema
+            for(i=0; i<value.length; i++) {
+              errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i,fullSchemaValue));
+            }
+          }
+        }
+
+        // `maxItems`
+        if(schema.maxItems) {
+          if(value.length > schema.maxItems) {
+            errors.push({
+              path: path,
+              property: 'maxItems',
+              message: this.translate('error_maxItems', [schema.maxItems])
+            });
+          }
+        }
+
+        // `minItems`
+        if(schema.minItems) {
+          if(value.length < schema.minItems) {
+            errors.push({
+              path: path,
+              property: 'minItems',
+              message: this.translate('error_minItems', [schema.minItems])
+            });
+          }
+        }
+
+        // `uniqueItems`
+        if(schema.uniqueItems) {
+          var seen = {};
+          for(i=0; i<value.length; i++) {
+            valid = JSON.stringify(value[i]);
+            if(seen[valid]) {
+              errors.push({
+                path: path,
+                property: 'uniqueItems',
+                message: this.translate('error_uniqueItems')
+              });
+              break;
+            }
+            seen[valid] = true;
           }
         }
       }
+      // Object specific validation
+      else if(typeof value === "object" && value !== null) {
+        // `maxProperties`
+        if(schema.maxProperties) {
+          valid = 0;
+          for(i in value) {
+            if(!value.hasOwnProperty(i)) continue;
+            valid++;
+          }
+          if(valid > schema.maxProperties) {
+            errors.push({
+              path: path,
+              property: 'maxProperties',
+              message: this.translate('error_maxProperties', [schema.maxProperties])
+            });
+          }
+        }
+
+        // `minProperties`
+        if(schema.minProperties) {
+          valid = 0;
+          for(i in value) {
+            if(!value.hasOwnProperty(i)) continue;
+            valid++;
+          }
+          if(valid < schema.minProperties) {
+            errors.push({
+              path: path,
+              property: 'minProperties',
+              message: this.translate('error_minProperties', [schema.minProperties])
+            });
+          }
+        }
+
+        // Version 4 `required`
+        if(schema.required && Array.isArray(schema.required)) {
+          for(i=0; i<schema.required.length; i++) {
+            if(typeof value[schema.required[i]] === "undefined") {
+              errors.push({
+                path: path,
+                property: 'required',
+                message: this.translate('error_required', [schema.required[i]])
+              });
+            }
+          }
+        }
+
+        // `properties`
+        var validated_properties = {};
+        if(schema.properties) {
+          for(i in schema.properties) {
+            if(!schema.properties.hasOwnProperty(i)) continue;
+            validated_properties[i] = true;
+            errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i,fullSchemaValue));
+          }
+        }
+
+        // `patternProperties`
+        if(schema.patternProperties) {
+          for(i in schema.patternProperties) {
+            if(!schema.patternProperties.hasOwnProperty(i)) continue;
+
+            var regex = new RegExp(i);
+
+            // Check which properties match
+            for(j in value) {
+              if(!value.hasOwnProperty(j)) continue;
+              if(regex.test(j)) {
+                validated_properties[j] = true;
+                errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j,fullSchemaValue));
+              }
+            }
+          }
+        }
+
+        // The no_additional_properties option currently doesn't work with extended schemas that use oneOf or anyOf
+        if(typeof schema.additionalProperties === "undefined" && this.jsoneditor.options.no_additional_properties && !schema.oneOf && !schema.anyOf) {
+          schema.additionalProperties = false;
+        }
+
+        // `additionalProperties`
+        if(typeof schema.additionalProperties !== "undefined") {
+          for(i in value) {
+            if(!value.hasOwnProperty(i)) continue;
+            if(!validated_properties[i]) {
+              // No extra properties allowed
+              if(!schema.additionalProperties) {
+                errors.push({
+                  path: path,
+                  property: 'additionalProperties',
+                  message: this.translate('error_additional_properties', [i])
+                });
+                break;
+              }
+              // Allowed
+              else if(schema.additionalProperties === true) {
+                break;
+              }
+              // Must match schema
+              // TODO: incompatibility between version 3 and 4 of the spec
+              else {
+                errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i,fullSchemaValue));
+              }
+            }
+          }
+        }
+
+        // `dependencies`
+        if(schema.dependencies) {
+          for(i in schema.dependencies) {
+            if(!schema.dependencies.hasOwnProperty(i)) continue;
+
+            // Doesn't need to meet the dependency
+            if(typeof value[i] === "undefined") continue;
+
+            // Property dependency
+            if(Array.isArray(schema.dependencies[i])) {
+              for(j=0; j<schema.dependencies[i].length; j++) {
+                if(typeof value[schema.dependencies[i][j]] === "undefined") {
+                  errors.push({
+                    path: path,
+                    property: 'dependencies',
+                    message: this.translate('error_dependency', [schema.dependencies[i][j]])
+                  });
+                }
+              }
+            }
+            // Schema dependency
+            else {
+              errors = errors.concat(this._validateSchema(schema.dependencies[i],value,path,fullSchemaValue));
+            }
+          }
+        }
+      }
+
+      // Custom type validation
+      $each(JSONEditor.defaults.custom_validators,function(i,validator) {
+        errors = errors.concat(validator(schema,value,path, fullSchemaValue));
+      });
     }
-
-    // Custom type validation
-    $each(JSONEditor.defaults.custom_validators,function(i,validator) {
-      errors = errors.concat(validator(schema,value,path, fullSchemaValue));
-    });
-
     return errors;
   },
   _checkType: function(type, value) {
