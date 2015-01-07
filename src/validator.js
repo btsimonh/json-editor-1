@@ -78,7 +78,7 @@ JSONEditor.Validator = Class.extend({
                   } // else value is no good, will fall through to errors.push
                 } else {
                   // not an array. Check that value is "truthy".
-                  if (!!value) {
+                  if (!!value || schema.type === "object") { // if it's an object, properties get validated.
                     // value is "truthy". We're good. return.
                     hasError = false;
                   } // else value is no good, will fall through to errors.push

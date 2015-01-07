@@ -829,7 +829,7 @@ JSONEditor.Validator = Class.extend({
                   } // else value is no good, will fall through to errors.push
                 } else {
                   // not an array. Check that value is "truthy".
-                  if (!!value) {
+                  if (!!value || schema.type === "object") { // if it's an object, properties get validated.
                     // value is "truthy". We're good. return.
                     hasError = false;
                   } // else value is no good, will fall through to errors.push
@@ -3156,9 +3156,9 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
         editor.setValue(value[i],initial);
       }
       // Otherwise, remove value unless this is the initial set or it's required
-      else if(!initial && !self.isRequired(editor)) {
-        self.removeObjectProperty(i);
-      }
+//      else if(!initial && !self.isRequired(editor)) {
+//        self.removeObjectProperty(i);
+//      }
       // Otherwise, set the value to the default
       else {
         editor.setValue(editor.getDefault(),initial);
