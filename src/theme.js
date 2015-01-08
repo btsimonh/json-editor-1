@@ -2,6 +2,9 @@ JSONEditor.AbstractTheme = Class.extend({
   getContainer: function() {
     return document.createElement('div');
   },
+  getCanvas: function() {
+    return document.createElement('canvas');
+  },
   getFloatRightLinkHolder: function() {
     var el = document.createElement('div');
     el.style = el.style || {};

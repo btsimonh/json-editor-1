@@ -195,17 +195,23 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
     return "geolocation";
   }
 });
+// If the type is set and it's a basic type, use the primitive editor
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  // If the schema is a simple type
+  if(typeof schema.type === "string") return schema.type;
+});
 // Use the imageFile editor for all imageFIle types
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'string' && schema.format === 'imageFile') {
     return "imageFile";
   }
 });
-// If the type is set and it's a basic type, use the primitive editor
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  // If the schema is a simple type
-  if(typeof schema.type === "string") return schema.type;
+  if (schema.type === "string" && schema.format === "signature") {
+    return "signature";
+  }
 });
+
 // Use the select editor for all boolean values
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'boolean') {

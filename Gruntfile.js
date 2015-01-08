@@ -40,6 +40,7 @@ module.exports = function(grunt) {
           'src/editors/multiselect.js',
           'src/editors/base64.js',
           'src/editors/upload.js',
+          'src/editors/signature.js',
 
           // All the themes and iconlibs
           'src/theme.js',
