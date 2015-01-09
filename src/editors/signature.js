@@ -11,7 +11,7 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
     // Input that holds the base64 string
 
     var divElem = this.theme.getContainer();
-    divElem.setAttribute("class", "signature");
+    $(divElem).addClass("signature");
 
     var canvas = this.theme.getCanvas();
 
@@ -27,7 +27,8 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
                   dataURI: sigpad.toDataURL(),
                   height: canvas.height,
                   width: canvas.width,
-                  timestamp: (new Date()).toLocaleString()
+                  timestamp: self.translate("signature_timestamp", [(new Date()).toLocaleString()]),
+                  hasValue: true
                 }
         );
         self.jsoneditor.notifyWatchers(self.path);

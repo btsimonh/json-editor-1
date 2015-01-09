@@ -159,7 +159,12 @@ JSONEditor.defaults.languages.en = {
    * When a dependency is not resolved
    * @variables This key takes one variable: The name of the missing property for the dependency
    */
-  error_dependency: "Must have property {{0}}"
+  error_dependency: "Must have property {{0}}",
+  /**
+   * Signature timestamp - displayed underneath a signature.
+   * @variables This key takes one variable: the timestamp (as a locale-specific time string).
+   */
+  signature_timestamp: "Signed on {{0}}"
 };
 
 // Miscellaneous Plugin Settings

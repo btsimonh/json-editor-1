@@ -776,16 +776,16 @@ JSONEditor.defaults = {
 };
 
 JSONEditor.Validator = Class.extend({
-  init: function(jsoneditor,schema) {
+  init: function (jsoneditor, schema) {
     this.jsoneditor = jsoneditor;
     this.schema = schema || this.jsoneditor.schema;
     this.options = {};
     this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
   },
-  validate: function(value) {
+  validate: function (value) {
     return this._validateSchema(this.schema, value, 'root', value);
   },
-  _validateSchema: function(schema,value,path,fullSchemaValue) {
+  _validateSchema: function (schema, value, path, fullSchemaValue) {
     var errors = [];
     var valid, i, j, thisEditor;
     var stringified = JSON.stringify(value);
@@ -793,7 +793,7 @@ JSONEditor.Validator = Class.extend({
     path = path || 'root';
 
     // Work on a copy of the schema
-    schema = $extend({},this.jsoneditor.expandRefs(schema));
+    schema = $extend({}, this.jsoneditor.expandRefs(schema));
 
     /*
      * Type Agnostic Validation
@@ -828,79 +828,79 @@ JSONEditor.Validator = Class.extend({
      * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
      *  it is hidden and disabled.
      */
-      if (schema.requiredIf) {
-        var hasError = true, // start by assuming that this is required and not supplied.
-            valueMatch = false, // start by assuming the values DONT match
-            showThisField = false; // start by assuming this field should be hidden
+    if (schema.requiredIf) {
+      var hasError = true, // start by assuming that this is required and not supplied.
+              valueMatch = false, // start by assuming the values DONT match
+              showThisField = false; // start by assuming this field should be hidden
 
-        // we have a cross-reference requirement. Check the value of the associated path.
-        //  schema.requiredIf.propertyPath
-        if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
-          // what type is this value?
-          var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
-          if (type) {
-            // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
-            if (schema.requiredIf.propertyPathMatches.matchType === type) {
-              // both the same type, now check values
-              valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
-              if (valueMatch === true) {
-                // this one is definitely required. So check that we have it.
-                showThisField = true;
+      // we have a cross-reference requirement. Check the value of the associated path.
+      //  schema.requiredIf.propertyPath
+      if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
+        // what type is this value?
+        var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
+        if (type) {
+          // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
+          if (schema.requiredIf.propertyPathMatches.matchType === type) {
+            // both the same type, now check values
+            valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+            if (valueMatch === true) {
+              // this one is definitely required. So check that we have it.
+              showThisField = true;
 
-                if (schema.type === "array") {
-                  // make sure we have at least one
-                  if (value && (value.length > 0)) {
-                    // we're good. return.
-                    hasError = false;
-                  } // else value is no good, will fall through to errors.push
-                } else {
-                  // not an array. Check that value is "truthy".
-                  if (!!value || schema.type === "object") { // if it's an object, properties get validated.
-                    // value is "truthy". We're good. return.
-                    hasError = false;
-                  } // else value is no good, will fall through to errors.push
-                }
+              if (schema.type === "array") {
+                // make sure we have at least one
+                if (value && (value.length > 0)) {
+                  // we're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
               } else {
-                // the value we have differs from the matchExpression. So it's not required. we're good. return.
-                hasError = false;
+                // not an array. Check that value is "truthy".
+                if (!!value || schema.type === "object") { // if it's an object, properties get validated.
+                  // value is "truthy". We're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
               }
+            } else {
+              // the value we have differs from the matchExpression. So it's not required. we're good. return.
+              hasError = false;
             }
+          }
 
-          }
-        }
-        if (showThisField) {
-          if (schema.requiredIf.hideOtherwise) {
-            // make sure it's shown
-            $("[data-schemapath=\"" + path + "\"]").show();
-          }
-          if (schema.requiredIf.disableOtherwise) {
-            // make sure it's enabled
-            this.jsoneditor.getEditor(path).enable();
-          }
-        } else {
-          if (schema.requiredIf.hideOtherwise) {
-            // We need to hide this one.
-            $("[data-schemapath=\"" + path + "\"]").hide();
-          }
-          if (schema.requiredIf.disableOtherwise) {
-            // we need to disable this one.
-            this.jsoneditor.getEditor(path).disable();
-          }
-        }
-        if (hasError) {
-          // if we get to this point, it didn't work out.
-          errors.push({
-            path: path,
-            property: 'requiredIf',
-            message: this.translate("error_requiredIf", [schema.title])
-          });
         }
       }
+      if (showThisField) {
+        if (schema.requiredIf.hideOtherwise) {
+          // make sure it's shown
+          $("[data-schemapath=\"" + path + "\"]").show();
+        }
+        if (schema.requiredIf.disableOtherwise) {
+          // make sure it's enabled
+          this.jsoneditor.getEditor(path).enable();
+        }
+      } else {
+        if (schema.requiredIf.hideOtherwise) {
+          // We need to hide this one.
+          $("[data-schemapath=\"" + path + "\"]").hide();
+        }
+        if (schema.requiredIf.disableOtherwise) {
+          // we need to disable this one.
+          this.jsoneditor.getEditor(path).disable();
+        }
+      }
+      if (hasError) {
+        // if we get to this point, it didn't work out.
+        errors.push({
+          path: path,
+          property: 'requiredIf',
+          message: this.translate("error_requiredIf", [schema.title])
+        });
+      }
+    }
     thisEditor = this.jsoneditor.getEditor(path);
     if (thisEditor && !thisEditor.disabled) {
       // Version 3 `required`
-      if(schema.required && schema.required === true) {
-        if(typeof value === "undefined") {
+      if (schema.required && schema.required === true) {
+        if (typeof value === "undefined") {
           errors.push({
             path: path,
             property: 'required',
@@ -909,12 +909,40 @@ JSONEditor.Validator = Class.extend({
 
           // Can't do any more validation at this point
           return errors;
+        } else if (
+                schema.format &&
+                (schema.format === "signature") &&
+                typeof value === "string") {
+          if (value.length === 0) {
+            // hasn't been signed.
+            errors.push({
+              path: path,
+              property: 'required',
+              message: this.translate("error_notset")
+            });
+          } else {
+            // we should be able to parse the value as JSON
+            try {
+              var sigVal = JSON.parse(value);
+              if (sigVal && !sigVal.hasValue) {
+                // hasn't been signed.
+                errors.push({
+                  path: path,
+                  property: 'required',
+                  message: this.translate("error_notset")
+                });
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          }
         }
+
       }
       // Value not defined
-      else if(typeof value === "undefined") {
+      else if (typeof value === "undefined") {
         // If required_by_default is set, all fields are required
-        if(this.jsoneditor.options.required_by_default) {
+        if (this.jsoneditor.options.required_by_default) {
           errors.push({
             path: path,
             property: 'required',
@@ -929,12 +957,13 @@ JSONEditor.Validator = Class.extend({
 
 
       // `enum`
-      if(schema.enum) {
+      if (schema.enum) {
         valid = false;
-        for(i=0; i<schema.enum.length; i++) {
-          if(stringified === JSON.stringify(schema.enum[i])) valid = true;
+        for (i = 0; i < schema.enum.length; i++) {
+          if (stringified === JSON.stringify(schema.enum[i]))
+            valid = true;
         }
-        if(!valid) {
+        if (!valid) {
           errors.push({
             path: path,
             property: 'enum',
@@ -944,29 +973,29 @@ JSONEditor.Validator = Class.extend({
       }
 
       // `extends` (version 3)
-      if(schema.extends) {
-        for(i=0; i<schema.extends.length; i++) {
-          errors = errors.concat(this._validateSchema(schema.extends[i],value,path,fullSchemaValue));
+      if (schema.extends) {
+        for (i = 0; i < schema.extends.length; i++) {
+          errors = errors.concat(this._validateSchema(schema.extends[i], value, path, fullSchemaValue));
         }
       }
 
       // `allOf`
-      if(schema.allOf) {
-        for(i=0; i<schema.allOf.length; i++) {
-          errors = errors.concat(this._validateSchema(schema.allOf[i],value,path,fullSchemaValue));
+      if (schema.allOf) {
+        for (i = 0; i < schema.allOf.length; i++) {
+          errors = errors.concat(this._validateSchema(schema.allOf[i], value, path, fullSchemaValue));
         }
       }
 
       // `anyOf`
-      if(schema.anyOf) {
+      if (schema.anyOf) {
         valid = false;
-        for(i=0; i<schema.anyOf.length; i++) {
-          if(!this._validateSchema(schema.anyOf[i],value,path,fullSchemaValue).length) {
+        for (i = 0; i < schema.anyOf.length; i++) {
+          if (!this._validateSchema(schema.anyOf[i], value, path, fullSchemaValue).length) {
             valid = true;
             break;
           }
         }
-        if(!valid) {
+        if (!valid) {
           errors.push({
             path: path,
             property: 'anyOf',
@@ -976,23 +1005,23 @@ JSONEditor.Validator = Class.extend({
       }
 
       // `oneOf`
-      if(schema.oneOf) {
+      if (schema.oneOf) {
         valid = 0;
         var oneof_errors = [];
-        for(i=0; i<schema.oneOf.length; i++) {
+        for (i = 0; i < schema.oneOf.length; i++) {
           // Set the error paths to be path.oneOf[i].rest.of.path
-          var tmp = this._validateSchema(schema.oneOf[i],value,path,fullSchemaValue);
-          if(!tmp.length) {
+          var tmp = this._validateSchema(schema.oneOf[i], value, path, fullSchemaValue);
+          if (!tmp.length) {
             valid++;
           }
 
-          for(j=0; j<tmp.length; j++) {
-            tmp[j].path = path+'.oneOf['+i+']'+tmp[j].path.substr(path.length);
+          for (j = 0; j < tmp.length; j++) {
+            tmp[j].path = path + '.oneOf[' + i + ']' + tmp[j].path.substr(path.length);
           }
           oneof_errors = oneof_errors.concat(tmp);
 
         }
-        if(valid !== 1) {
+        if (valid !== 1) {
           errors.push({
             path: path,
             property: 'oneOf',
@@ -1003,8 +1032,8 @@ JSONEditor.Validator = Class.extend({
       }
 
       // `not`
-      if(schema.not) {
-        if(!this._validateSchema(schema.not,value,path,fullSchemaValue).length) {
+      if (schema.not) {
+        if (!this._validateSchema(schema.not, value, path, fullSchemaValue).length) {
           errors.push({
             path: path,
             property: 'not',
@@ -1014,17 +1043,17 @@ JSONEditor.Validator = Class.extend({
       }
 
       // `type` (both Version 3 and Version 4 support)
-      if(schema.type) {
+      if (schema.type) {
         // Union type
-        if(Array.isArray(schema.type)) {
+        if (Array.isArray(schema.type)) {
           valid = false;
-          for(i=0;i<schema.type.length;i++) {
-            if(this._checkType(schema.type[i], value)) {
+          for (i = 0; i < schema.type.length; i++) {
+            if (this._checkType(schema.type[i], value)) {
               valid = true;
               break;
             }
           }
-          if(!valid) {
+          if (!valid) {
             errors.push({
               path: path,
               property: 'type',
@@ -1034,7 +1063,7 @@ JSONEditor.Validator = Class.extend({
         }
         // Simple type
         else {
-          if(!this._checkType(schema.type, value)) {
+          if (!this._checkType(schema.type, value)) {
             errors.push({
               path: path,
               property: 'type',
@@ -1046,17 +1075,17 @@ JSONEditor.Validator = Class.extend({
 
 
       // `disallow` (version 3)
-      if(schema.disallow) {
+      if (schema.disallow) {
         // Union type
-        if(Array.isArray(schema.disallow)) {
+        if (Array.isArray(schema.disallow)) {
           valid = true;
-          for(i=0;i<schema.disallow.length;i++) {
-            if(this._checkType(schema.disallow[i], value)) {
+          for (i = 0; i < schema.disallow.length; i++) {
+            if (this._checkType(schema.disallow[i], value)) {
               valid = false;
               break;
             }
           }
-          if(!valid) {
+          if (!valid) {
             errors.push({
               path: path,
               property: 'disallow',
@@ -1066,7 +1095,7 @@ JSONEditor.Validator = Class.extend({
         }
         // Simple type
         else {
-          if(this._checkType(schema.disallow, value)) {
+          if (this._checkType(schema.disallow, value)) {
             errors.push({
               path: path,
               property: 'disallow',
@@ -1081,29 +1110,29 @@ JSONEditor.Validator = Class.extend({
        */
 
       // Number Specific Validation
-      if(typeof value === "number") {
+      if (typeof value === "number") {
         // `multipleOf` and `divisibleBy`
-        if(schema.multipleOf || schema.divisibleBy) {
+        if (schema.multipleOf || schema.divisibleBy) {
           valid = value / (schema.multipleOf || schema.divisibleBy);
-          if(valid !== Math.floor(valid)) {
+          if (valid !== Math.floor(valid)) {
             errors.push({
               path: path,
-              property: schema.multipleOf? 'multipleOf' : 'divisibleBy',
+              property: schema.multipleOf ? 'multipleOf' : 'divisibleBy',
               message: this.translate('error_multipleOf', [schema.multipleOf || schema.divisibleBy])
             });
           }
         }
 
         // `maximum`
-        if(schema.hasOwnProperty('maximum')) {
-          if(schema.exclusiveMaximum && value >= schema.maximum) {
+        if (schema.hasOwnProperty('maximum')) {
+          if (schema.exclusiveMaximum && value >= schema.maximum) {
             errors.push({
               path: path,
               property: 'maximum',
               message: this.translate('error_maximum_excl', [schema.maximum])
             });
           }
-          else if(!schema.exclusiveMaximum && value > schema.maximum) {
+          else if (!schema.exclusiveMaximum && value > schema.maximum) {
             errors.push({
               path: path,
               property: 'maximum',
@@ -1113,15 +1142,15 @@ JSONEditor.Validator = Class.extend({
         }
 
         // `minimum`
-        if(schema.hasOwnProperty('minimum')) {
-          if(schema.exclusiveMinimum && value <= schema.minimum) {
+        if (schema.hasOwnProperty('minimum')) {
+          if (schema.exclusiveMinimum && value <= schema.minimum) {
             errors.push({
               path: path,
               property: 'minimum',
               message: this.translate('error_minimum_excl', [schema.minimum])
             });
           }
-          else if(!schema.exclusiveMinimum && value < schema.minimum) {
+          else if (!schema.exclusiveMinimum && value < schema.minimum) {
             errors.push({
               path: path,
               property: 'minimum',
@@ -1131,10 +1160,10 @@ JSONEditor.Validator = Class.extend({
         }
       }
       // String specific validation
-      else if(typeof value === "string") {
+      else if (typeof value === "string") {
         // `maxLength`
-        if(schema.maxLength) {
-          if((value+"").length > schema.maxLength) {
+        if (schema.maxLength) {
+          if ((value + "").length > schema.maxLength) {
             errors.push({
               path: path,
               property: 'maxLength',
@@ -1144,19 +1173,19 @@ JSONEditor.Validator = Class.extend({
         }
 
         // `minLength`
-        if(schema.minLength) {
-          if((value+"").length < schema.minLength) {          
+        if (schema.minLength) {
+          if ((value + "").length < schema.minLength) {
             errors.push({
               path: path,
               property: 'minLength',
-              message: this.translate((schema.minLength===1?'error_notempty':'error_minLength'), [schema.minLength])
+              message: this.translate((schema.minLength === 1 ? 'error_notempty' : 'error_minLength'), [schema.minLength])
             });
           }
         }
 
         // `pattern`
-        if(schema.pattern) {
-          if(!(new RegExp(schema.pattern)).test(value)) {
+        if (schema.pattern) {
+          if (!(new RegExp(schema.pattern)).test(value)) {
             errors.push({
               path: path,
               property: 'pattern',
@@ -1166,28 +1195,28 @@ JSONEditor.Validator = Class.extend({
         }
       }
       // Array specific validation
-      else if(typeof value === "object" && value !== null && Array.isArray(value)) {
+      else if (typeof value === "object" && value !== null && Array.isArray(value)) {
         // `items` and `additionalItems`
-        if(schema.items) {
+        if (schema.items) {
           // `items` is an array
-          if(Array.isArray(schema.items)) {
-            for(i=0; i<value.length; i++) {
+          if (Array.isArray(schema.items)) {
+            for (i = 0; i < value.length; i++) {
               // If this item has a specific schema tied to it
               // Validate against it
-              if(schema.items[i]) {
-                errors = errors.concat(this._validateSchema(schema.items[i],value[i],path+'.'+i,fullSchemaValue));
+              if (schema.items[i]) {
+                errors = errors.concat(this._validateSchema(schema.items[i], value[i], path + '.' + i, fullSchemaValue));
               }
               // If all additional items are allowed
-              else if(schema.additionalItems === true) {
+              else if (schema.additionalItems === true) {
                 break;
               }
               // If additional items is a schema
               // TODO: Incompatibility between version 3 and 4 of the spec
-              else if(schema.additionalItems) {
-                errors = errors.concat(this._validateSchema(schema.additionalItems,value[i],path+'.'+i,fullSchemaValue));
+              else if (schema.additionalItems) {
+                errors = errors.concat(this._validateSchema(schema.additionalItems, value[i], path + '.' + i, fullSchemaValue));
               }
               // If no additional items are allowed
-              else if(schema.additionalItems === false) {
+              else if (schema.additionalItems === false) {
                 errors.push({
                   path: path,
                   property: 'additionalItems',
@@ -1204,15 +1233,15 @@ JSONEditor.Validator = Class.extend({
           // `items` is a schema
           else {
             // Each item in the array must validate against the schema
-            for(i=0; i<value.length; i++) {
-              errors = errors.concat(this._validateSchema(schema.items,value[i],path+'.'+i,fullSchemaValue));
+            for (i = 0; i < value.length; i++) {
+              errors = errors.concat(this._validateSchema(schema.items, value[i], path + '.' + i, fullSchemaValue));
             }
           }
         }
 
         // `maxItems`
-        if(schema.maxItems) {
-          if(value.length > schema.maxItems) {
+        if (schema.maxItems) {
+          if (value.length > schema.maxItems) {
             errors.push({
               path: path,
               property: 'maxItems',
@@ -1222,8 +1251,8 @@ JSONEditor.Validator = Class.extend({
         }
 
         // `minItems`
-        if(schema.minItems) {
-          if(value.length < schema.minItems) {
+        if (schema.minItems) {
+          if (value.length < schema.minItems) {
             errors.push({
               path: path,
               property: 'minItems',
@@ -1233,11 +1262,11 @@ JSONEditor.Validator = Class.extend({
         }
 
         // `uniqueItems`
-        if(schema.uniqueItems) {
+        if (schema.uniqueItems) {
           var seen = {};
-          for(i=0; i<value.length; i++) {
+          for (i = 0; i < value.length; i++) {
             valid = JSON.stringify(value[i]);
-            if(seen[valid]) {
+            if (seen[valid]) {
               errors.push({
                 path: path,
                 property: 'uniqueItems',
@@ -1250,15 +1279,16 @@ JSONEditor.Validator = Class.extend({
         }
       }
       // Object specific validation
-      else if(typeof value === "object" && value !== null) {
+      else if (typeof value === "object" && value !== null) {
         // `maxProperties`
-        if(schema.maxProperties) {
+        if (schema.maxProperties) {
           valid = 0;
-          for(i in value) {
-            if(!value.hasOwnProperty(i)) continue;
+          for (i in value) {
+            if (!value.hasOwnProperty(i))
+              continue;
             valid++;
           }
-          if(valid > schema.maxProperties) {
+          if (valid > schema.maxProperties) {
             errors.push({
               path: path,
               property: 'maxProperties',
@@ -1268,13 +1298,14 @@ JSONEditor.Validator = Class.extend({
         }
 
         // `minProperties`
-        if(schema.minProperties) {
+        if (schema.minProperties) {
           valid = 0;
-          for(i in value) {
-            if(!value.hasOwnProperty(i)) continue;
+          for (i in value) {
+            if (!value.hasOwnProperty(i))
+              continue;
             valid++;
           }
-          if(valid < schema.minProperties) {
+          if (valid < schema.minProperties) {
             errors.push({
               path: path,
               property: 'minProperties',
@@ -1284,9 +1315,9 @@ JSONEditor.Validator = Class.extend({
         }
 
         // Version 4 `required`
-        if(schema.required && Array.isArray(schema.required)) {
-          for(i=0; i<schema.required.length; i++) {
-            if(typeof value[schema.required[i]] === "undefined") {
+        if (schema.required && Array.isArray(schema.required)) {
+          for (i = 0; i < schema.required.length; i++) {
+            if (typeof value[schema.required[i]] === "undefined") {
               errors.push({
                 path: path,
                 property: 'required',
@@ -1298,44 +1329,48 @@ JSONEditor.Validator = Class.extend({
 
         // `properties`
         var validated_properties = {};
-        if(schema.properties) {
-          for(i in schema.properties) {
-            if(!schema.properties.hasOwnProperty(i)) continue;
+        if (schema.properties) {
+          for (i in schema.properties) {
+            if (!schema.properties.hasOwnProperty(i))
+              continue;
             validated_properties[i] = true;
-            errors = errors.concat(this._validateSchema(schema.properties[i],value[i],path+'.'+i,fullSchemaValue));
+            errors = errors.concat(this._validateSchema(schema.properties[i], value[i], path + '.' + i, fullSchemaValue));
           }
         }
 
         // `patternProperties`
-        if(schema.patternProperties) {
-          for(i in schema.patternProperties) {
-            if(!schema.patternProperties.hasOwnProperty(i)) continue;
+        if (schema.patternProperties) {
+          for (i in schema.patternProperties) {
+            if (!schema.patternProperties.hasOwnProperty(i))
+              continue;
 
             var regex = new RegExp(i);
 
             // Check which properties match
-            for(j in value) {
-              if(!value.hasOwnProperty(j)) continue;
-              if(regex.test(j)) {
+            for (j in value) {
+              if (!value.hasOwnProperty(j))
+                continue;
+              if (regex.test(j)) {
                 validated_properties[j] = true;
-                errors = errors.concat(this._validateSchema(schema.patternProperties[i],value[j],path+'.'+j,fullSchemaValue));
+                errors = errors.concat(this._validateSchema(schema.patternProperties[i], value[j], path + '.' + j, fullSchemaValue));
               }
             }
           }
         }
 
         // The no_additional_properties option currently doesn't work with extended schemas that use oneOf or anyOf
-        if(typeof schema.additionalProperties === "undefined" && this.jsoneditor.options.no_additional_properties && !schema.oneOf && !schema.anyOf) {
+        if (typeof schema.additionalProperties === "undefined" && this.jsoneditor.options.no_additional_properties && !schema.oneOf && !schema.anyOf) {
           schema.additionalProperties = false;
         }
 
         // `additionalProperties`
-        if(typeof schema.additionalProperties !== "undefined") {
-          for(i in value) {
-            if(!value.hasOwnProperty(i)) continue;
-            if(!validated_properties[i]) {
+        if (typeof schema.additionalProperties !== "undefined") {
+          for (i in value) {
+            if (!value.hasOwnProperty(i))
+              continue;
+            if (!validated_properties[i]) {
               // No extra properties allowed
-              if(!schema.additionalProperties) {
+              if (!schema.additionalProperties) {
                 errors.push({
                   path: path,
                   property: 'additionalProperties',
@@ -1344,30 +1379,32 @@ JSONEditor.Validator = Class.extend({
                 break;
               }
               // Allowed
-              else if(schema.additionalProperties === true) {
+              else if (schema.additionalProperties === true) {
                 break;
               }
               // Must match schema
               // TODO: incompatibility between version 3 and 4 of the spec
               else {
-                errors = errors.concat(this._validateSchema(schema.additionalProperties,value[i],path+'.'+i,fullSchemaValue));
+                errors = errors.concat(this._validateSchema(schema.additionalProperties, value[i], path + '.' + i, fullSchemaValue));
               }
             }
           }
         }
 
         // `dependencies`
-        if(schema.dependencies) {
-          for(i in schema.dependencies) {
-            if(!schema.dependencies.hasOwnProperty(i)) continue;
+        if (schema.dependencies) {
+          for (i in schema.dependencies) {
+            if (!schema.dependencies.hasOwnProperty(i))
+              continue;
 
             // Doesn't need to meet the dependency
-            if(typeof value[i] === "undefined") continue;
+            if (typeof value[i] === "undefined")
+              continue;
 
             // Property dependency
-            if(Array.isArray(schema.dependencies[i])) {
-              for(j=0; j<schema.dependencies[i].length; j++) {
-                if(typeof value[schema.dependencies[i][j]] === "undefined") {
+            if (Array.isArray(schema.dependencies[i])) {
+              for (j = 0; j < schema.dependencies[i].length; j++) {
+                if (typeof value[schema.dependencies[i][j]] === "undefined") {
                   errors.push({
                     path: path,
                     property: 'dependencies',
@@ -1378,34 +1415,42 @@ JSONEditor.Validator = Class.extend({
             }
             // Schema dependency
             else {
-              errors = errors.concat(this._validateSchema(schema.dependencies[i],value,path,fullSchemaValue));
+              errors = errors.concat(this._validateSchema(schema.dependencies[i], value, path, fullSchemaValue));
             }
           }
         }
       }
 
       // Custom type validation
-      $each(JSONEditor.defaults.custom_validators,function(i,validator) {
-        errors = errors.concat(validator(schema,value,path, fullSchemaValue));
+      $each(JSONEditor.defaults.custom_validators, function (i, validator) {
+        errors = errors.concat(validator(schema, value, path, fullSchemaValue));
       });
     }
     return errors;
   },
-  _checkType: function(type, value) {
+  _checkType: function (type, value) {
     // Simple types
-    if(typeof type === "string") {
-      if(type==="string") return typeof value === "string";
-      else if(type==="number") return typeof value === "number";
-      else if(type==="integer") return typeof value === "number" && value === Math.floor(value);
-      else if(type==="boolean") return typeof value === "boolean";
-      else if(type==="array") return Array.isArray(value);
-      else if(type === "object") return value !== null && !(Array.isArray(value)) && typeof value === "object";
-      else if(type === "null") return value === null;
-      else return true;
+    if (typeof type === "string") {
+      if (type === "string")
+        return typeof value === "string";
+      else if (type === "number")
+        return typeof value === "number";
+      else if (type === "integer")
+        return typeof value === "number" && value === Math.floor(value);
+      else if (type === "boolean")
+        return typeof value === "boolean";
+      else if (type === "array")
+        return Array.isArray(value);
+      else if (type === "object")
+        return value !== null && !(Array.isArray(value)) && typeof value === "object";
+      else if (type === "null")
+        return value === null;
+      else
+        return true;
     }
     // Schema
     else {
-      return !this._validateSchema(type,value).length;
+      return !this._validateSchema(type, value).length;
     }
   }
 });
@@ -1442,7 +1487,8 @@ JSONEditor.AbstractEditor = Class.extend({
   },
   init: function(options) {
     this.jsoneditor = options.jsoneditor;
-    
+    this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
+
     this.theme = this.jsoneditor.theme;
     this.template_engine = this.jsoneditor.template;
     this.iconlib = this.jsoneditor.iconlib;
@@ -6238,7 +6284,7 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
     // Input that holds the base64 string
 
     var divElem = this.theme.getContainer();
-    divElem.setAttribute("class", "signature");
+    $(divElem).addClass("signature");
 
     var canvas = this.theme.getCanvas();
 
@@ -6254,7 +6300,8 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
                   dataURI: sigpad.toDataURL(),
                   height: canvas.height,
                   width: canvas.width,
-                  timestamp: (new Date()).toLocaleString()
+                  timestamp: self.translate("signature_timestamp", [(new Date()).toLocaleString()]),
+                  hasValue: true
                 }
         );
         self.jsoneditor.notifyWatchers(self.path);
@@ -7982,7 +8029,12 @@ JSONEditor.defaults.languages.en = {
    * When a dependency is not resolved
    * @variables This key takes one variable: The name of the missing property for the dependency
    */
-  error_dependency: "Must have property {{0}}"
+  error_dependency: "Must have property {{0}}",
+  /**
+   * Signature timestamp - displayed underneath a signature.
+   * @variables This key takes one variable: the timestamp (as a locale-specific time string).
+   */
+  signature_timestamp: "Signed on {{0}}"
 };
 
 // Miscellaneous Plugin Settings
