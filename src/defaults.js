@@ -164,7 +164,11 @@ JSONEditor.defaults.languages.en = {
    * Signature timestamp - displayed underneath a signature.
    * @variables This key takes one variable: the timestamp (as a locale-specific time string).
    */
-  signature_timestamp: "Signed on {{0}}"
+  signature_timestamp: "Signed on {{0}}",
+  /**
+   * text for the "clear signature" button below a signature.
+   */
+  clear_signature_button: "Clear signature"
 };
 
 // Miscellaneous Plugin Settings

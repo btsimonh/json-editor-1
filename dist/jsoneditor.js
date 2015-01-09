@@ -6285,8 +6285,10 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
 
     var divElem = this.theme.getContainer();
     $(divElem).addClass("signature");
+    var uuid = $uuid();
 
     var canvas = this.theme.getCanvas();
+    canvas.setAttribute("id", uuid);
 
     divElem.appendChild(canvas);
     self.input = divElem;
@@ -6301,7 +6303,7 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
                   height: canvas.height,
                   width: canvas.width,
                   timestamp: self.translate("signature_timestamp", [(new Date()).toLocaleString()]),
-                  hasValue: true
+                  hasValue: !self.signaturePad.isEmpty()
                 }
         );
         self.jsoneditor.notifyWatchers(self.path);
@@ -6309,7 +6311,17 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
           self.parent.onChildEditorChange(self);
         else
           self.jsoneditor.onChange();
-      }
+      };
+      var buttonHolder = this.theme.getButtonHolder();
+      var button = this.getButton(self.translate("clear_signature_button"), 'cancel');
+      buttonHolder.appendChild(button);
+      button.addEventListener("click",
+              function () {
+                self.signaturePad.clear();
+                self.setValue("");
+                self.jsoneditor.notifyWatchers(self.path);
+              }); // clear signature on press.
+      divElem.appendChild(buttonHolder);
     } else {
       this.signaturePad = undefined;
     }
@@ -6359,8 +6371,8 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
     if (val === this.serialized)
       return;
 
-    this.value = val;
     var changed = this.getValue() !== val;
+    this.value = val;
     // Bubble this setValue to parents if the value changed
     this.onChange(changed);
 
@@ -8034,7 +8046,11 @@ JSONEditor.defaults.languages.en = {
    * Signature timestamp - displayed underneath a signature.
    * @variables This key takes one variable: the timestamp (as a locale-specific time string).
    */
-  signature_timestamp: "Signed on {{0}}"
+  signature_timestamp: "Signed on {{0}}",
+  /**
+   * text for the "clear signature" button below a signature.
+   */
+  clear_signature_button: "Clear signature"
 };
 
 // Miscellaneous Plugin Settings
