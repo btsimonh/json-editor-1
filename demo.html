@@ -147,6 +147,7 @@ editor.on("change",  function() {
 <!-- Latest compiled and minified JavaScript -->
 <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="http://szimek.github.io/signature_pad/js/signature_pad.js"></script>
 <script>
 (function() {
     var schema;
@@ -162,35 +163,71 @@ editor.on("change",  function() {
     // Default starting schema
     if(!schema) {
       schema = {
-  "type": "object",
-  "theme": "bootstrap3",
-  "title": "Blessed Are The Cheese-Makers",
-  "properties": {
-    "Cheese": {
-      "type": "string",
-      "title": "Do you like cheese?",
-      "enum":["yes","no"]
-    },
-    "cheeseDetails": {
-      "type": "array",
-      "title": "Reason for liking cheese",
-      "requiredIf": {
-          "propertyPath": "Cheese",
-          "propertyPathMatches": {
-              "matchType": "string",
-              "matchExpression": "yes"
-          },
-          "hideOtherwise": true,
-          "disableOtherwise": true
-      },
-      "items": {
+    "type": "object",
+    "theme": "bootstrap3",
+    "iconlib": "fontawesome4",
+    "title": "Foo Inspection",
+    "formNumber": "FMxxx-x",
+    "instructionsHeading": "",
+    "instructions": "This text appears on the PDF",
+    "properties": {
+      "date": {
         "type": "string",
-        "minLength": 3,
-        "title": "Reason for liking cheese"
+        "format": "date",
+        "title": "Date",
+        "default": "2015-01-05"
+      },
+      "Radio": {
+        "type": "radio",
+        "required": true,
+        "title": "Radio",
+        "description": "Example Radio",
+        "enum": ["Cheese", "No Cheese"]
+      },
+      "User": {
+        "title": "Your Name",
+        "type": "string",
+        "description": "example name",
+        "default": "Joe Bloggs"
+      },
+      "Image": {
+        "title": "Image",
+        "type":"imageFile",
+        "format":"imageFile"
+      },
+      "currentLocation": {
+        "type": "string",
+        "format": "geolocation",
+        "title": "Current Location (when reported)",
+        "options": {
+          "compact": "true"
+        }
+      },      
+      "String": {
+        "title": "String",
+        "type": "string",
+        "description": "example string"
+      },
+      "Textarea": {
+        "title": "Textarea",
+        "type": "string",
+        "format": "textarea"
+      },
+      "Checkbox": {
+        "title": "Checkbox",
+        "type": "boolean",
+        "format": "checkbox",
+        "default": false
+      },
+      "Signature": {
+        "title": "Signature",
+        "type": "string",
+        "format": "signature",
+        "description": "sign above",
+        "required":true
       }
     }
-  }
-};
+  };
     }
 
     // Divs/textareas on the page
