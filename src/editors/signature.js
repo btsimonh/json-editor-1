@@ -1,3 +1,4 @@
+/* global SignaturePad */
 JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
   getNumColumns: function () {
     return 4;
@@ -73,11 +74,11 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
     this.control = this.theme.getFormControl(this.label, divElem, this.description);
     this.container.appendChild(this.control);
 
-    window.addEventListener("resize", resizeCanvas);
     function resizeCanvas() {
       canvas.width = $(canvas).parent().width();
       canvas.height = $(canvas).parent().height();
     }
+    window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
   },

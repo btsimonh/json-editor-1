@@ -3319,11 +3319,12 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
   }
 });
 
+/* global cordova, Camera */ // jsHint global declarations
 JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
-  getDefault: function() {
+  getDefault: function () {
     return this.schema.default || '';
   },
-  setValue: function(value, initial, from_template) {
+  setValue: function (value, initial, from_template) {
     var self = this;
 
     if (this.template && !from_template) {
@@ -3376,21 +3377,21 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
     this.watch_listener();
     this.jsoneditor.notifyWatchers(this.path);
   },
-  removeProperty: function() {
+  removeProperty: function () {
     this._super();
     this.input.style.display = 'none';
     if (this.description)
       this.description.style.display = 'none';
     this.theme.disableLabel(this.label);
   },
-  addProperty: function() {
+  addProperty: function () {
     this._super();
     this.input.style.display = '';
     if (this.description)
       this.description.style.display = '';
     this.theme.enableLabel(this.label);
   },
-  build: function() {
+  build: function () {
     var self = this;
     if (!this.getOption('compact', false))
       this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
@@ -3451,8 +3452,19 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
       this.input.disabled = true;
     }
 
+    var eventName = 'change';
+    if (cordova && (cordova.platformId === "android")) {
+      // the 'change' event doesn't seem to fire on android
+      eventName = 'click';
+    }
+
     this.input
-            .addEventListener('change', function(e) {
+            .addEventListener(eventName, function (e) {
+              var val = this.value,
+                      sanitized = self.sanitize(val), // sanitize value
+                      fileinput = this.querySelector("input[type=file]"),
+                      imgelem = this.querySelector("img");
+
               e.preventDefault();
               e.stopPropagation();
 
@@ -3462,68 +3474,140 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
                 return;
               }
 
-              var val = this.value;
-
               // sanitize value
-              var sanitized = self.sanitize(val);
               if (val !== sanitized) {
                 this.value = sanitized;
               }
-              var fileinput = this.querySelector("input[type=file]");
-              var imgelem = this.querySelector("img");
-              if (window.File && window.FileReader && window.FileList && window.Blob) {
 
-              } else {
-                console.error('The File APIs are not fully supported in this browser.');
-                return;
+              // use cordova camera and notification plugins
+              function onImageNotChosenFail(message) {
+                navigator.notification.alert(
+                        'Failed because: ' + message, // message
+                        function () {
+                        }, // callback that does nothing
+                        'Failed', // title
+                        'OK'                  // buttonName
+                        );
               }
 
-              if (!this) {
-                console.error("Um, couldn't find the fileinput element.");
+// process the confirmation dialog result
+              function obtainPicture(buttonIndex) {
+                if (buttonIndex === 1) {
+                  // take a new photo
+                  navigator.camera.getPicture(onImageChosenSuccess, onImageNotChosenFail, {quality: 75, destinationType: Camera.DestinationType.FILE_URI});
+
+                } else {
+                  // Choose one from the library
+                  navigator.camera.getPicture(onImageChosenSuccess, onImageNotChosenFail, {
+                    quality: 75,
+                    destinationType: Camera.DestinationType.FILE_URI,
+                    sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+                    encodingType: Camera.EncodingType.JPEG,
+                    mediaType: Camera.MediaType.PICTURE
+                  }
+                  );
+                }
               }
-              else if (!fileinput.files) {
-                console.error("This browser doesn't seem to support the `files` property of file inputs.");
-              }
-              else if (!fileinput.files[0]) {
-                console.error("Please select a file before clicking 'Load'");
-              }
-              else {
-                var file = fileinput.files[0];
-                var fr = new FileReader();
-                fr.onload = function(params) {
-                  // use the data URI as the result.
-                  imgelem.src = fr.result;
-                  // the value will be an object, with the dataURI and metadata
-                  // set it up once the thumbnail has been loaded.
-                  var imageObj = new Image();
-                  imageObj.onload = function() {
-                    var valueObj = {
-                      "dataURI": this.src, 
-                      "width" : this.width, 
-                      "height" : this.height,
-                      "name": file.name,
-                      "size": file.size,
-                      "type": file.type,
-                      "lastModificationDate": file.lastModifiedDate
-                    };
-                    // if filename doesn't have an extension, try to derive one from the file type
-                    if (file.name.indexOf(".") === -1) {
-                      if (file.type.indexOf("/") !== -1) {
-                        valueObj.name += "." + file.type.split("/")[1];
-                      }
-                    }
-                    self.setValue(valueObj);
+
+
+              function onImageChosenSuccess(imageURI) {
+                // use the data URI as the result.
+                imgelem.src = imageURI;
+                // the value will be an object, with the dataURI and metadata
+                // set it up once the thumbnail has been loaded.
+                var imageObj = new Image();
+                imageObj.onload = function () {
+                  var valueObj = {
+                    "dataURI": this.src,
+                    "width": this.width,
+                    "name": imageURI,
+                    "height": this.height //,
+//                        "name": file.name,
+//                        "size": file.size,
+//                        "type": file.type,
+//                        "lastModificationDate": file.lastModifiedDate
                   };
-                  imageObj.src = fr.result;
-                  
-                  //TODO: Move this to theme and make it more flexible.
-                  imgelem.style.maxWidth = "25%";
-                  imgelem.style.maxHeight = "25%";
+                  // if filename doesn't have an extension, try to derive one from the file type
+//                      if (file.name.indexOf(".") === -1) {
+//                        if (file.type.indexOf("/") !== -1) {
+//                          valueObj.name += "." + file.type.split("/")[1];
+//                        }
+//                      }
+                  self.setValue(valueObj);
                 };
+                imageObj.src = imageURI;
 
-                fr.readAsDataURL(file);
+                //TODO: Move this to theme and make it more flexible.
+                imgelem.style.maxWidth = "25%";
+                imgelem.style.maxHeight = "25%";
+
               }
 
+
+              if (cordova && (cordova.platformId === "android")) {
+                // Show a custom confirmation dialog
+                //
+                navigator.notification.confirm(
+                        'Where should the image come from?', // message
+                        obtainPicture, // callback to invoke with index of button pressed
+                        'Choose Image Source', // title
+                        ['Take Photo', 'Choose Existing']         // buttonLabels
+                        );
+              } else { // iOS or HTML
+                console.log("not android");
+                if (window.File && window.FileReader && window.FileList && window.Blob) {
+
+                } else {
+                  console.error('The File APIs are not fully supported in this browser.');
+                  return;
+                }
+
+                if (!this) {
+                  console.error("Um, couldn't find the fileinput element.");
+                }
+                else if (!fileinput.files) {
+                  console.error("This browser doesn't seem to support the `files` property of file inputs.");
+                }
+                else if (!fileinput.files[0]) {
+                  console.error("Please select a file before clicking 'Load'");
+                }
+                else {
+                  var file = fileinput.files[0];
+                  var fr = new FileReader();
+                  fr.onload = function (params) {
+                    // use the data URI as the result.
+                    imgelem.src = fr.result;
+                    // the value will be an object, with the dataURI and metadata
+                    // set it up once the thumbnail has been loaded.
+                    var imageObj = new Image();
+                    imageObj.onload = function () {
+                      var valueObj = {
+                        "dataURI": this.src,
+                        "width": this.width,
+                        "height": this.height,
+                        "name": file.name,
+                        "size": file.size,
+                        "type": file.type,
+                        "lastModificationDate": file.lastModifiedDate
+                      };
+                      // if filename doesn't have an extension, try to derive one from the file type
+                      if (file.name.indexOf(".") === -1) {
+                        if (file.type.indexOf("/") !== -1) {
+                          valueObj.name += "." + file.type.split("/")[1];
+                        }
+                      }
+                      self.setValue(valueObj);
+                    };
+                    imageObj.src = fr.result;
+
+                    //TODO: Move this to theme and make it more flexible.
+                    imgelem.style.maxWidth = "25%";
+                    imgelem.style.maxHeight = "25%";
+                  };
+
+                  fr.readAsDataURL(file);
+                }
+              }
 
               self.refreshValue();
               self.watch_listener();
@@ -3546,7 +3630,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
     }
 
     // Any special formatting that needs to happen after the input is added to the dom
-    requestAnimationFrame(function() {
+    requestAnimationFrame(function () {
       self.afterInputReady();
     });
 
@@ -3561,31 +3645,31 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
       this.jsoneditor.notifyWatchers(this.path);
     }
   },
-  enable: function() {
+  enable: function () {
     if (!this.always_disabled) {
       this.input.disabled = false;
       // TODO: WYSIWYG and Markdown editors
     }
     this._super();
   },
-  disable: function() {
+  disable: function () {
     this.input.disabled = true;
     // TODO: WYSIWYG and Markdown editors
     this._super();
   },
-  afterInputReady: function() {
+  afterInputReady: function () {
     var self = this;
 
     // Code editor
     self.theme.afterInputReady(self.input);
   },
-  refreshValue: function() {
+  refreshValue: function () {
     this.value = this.input.value;
     if (typeof this.value !== "string")
       this.value = '';
     this.serialized = this.value;
   },
-  destroy: function() {
+  destroy: function () {
 
 
     this.template = null;
@@ -3600,16 +3684,16 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
   /**
    * This is overridden in derivative editors
    */
-  sanitize: function(value) {
+  sanitize: function (value) {
     return value;
   },
   /**
    * Re-calculates the value if needed
    */
-  onWatchedFieldChange: function() {
+  onWatchedFieldChange: function () {
     var self = this;
     var vars;
-    
+
     // If this editor needs to be rendered by a macro template
     if (this.template) {
       vars = this.getWatchedFieldValues();
@@ -3704,11 +3788,11 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
 
     this._super();
   },
-  showValidationErrors: function(errors) {
+  showValidationErrors: function (errors) {
     var self = this;
 
     var messages = [];
-    $each(errors, function(i, error) {
+    $each(errors, function (i, error) {
       if (error.path === self.path) {
         messages.push(error.message);
       }
@@ -6271,6 +6355,7 @@ JSONEditor.defaults.editors.upload = JSONEditor.AbstractEditor.extend({
   }
 });
 
+/* global SignaturePad */
 JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
   getNumColumns: function () {
     return 4;
@@ -6346,11 +6431,11 @@ JSONEditor.defaults.editors.signature = JSONEditor.AbstractEditor.extend({
     this.control = this.theme.getFormControl(this.label, divElem, this.description);
     this.container.appendChild(this.control);
 
-    window.addEventListener("resize", resizeCanvas);
     function resizeCanvas() {
       canvas.width = $(canvas).parent().width();
       canvas.height = $(canvas).parent().height();
     }
+    window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
   },
