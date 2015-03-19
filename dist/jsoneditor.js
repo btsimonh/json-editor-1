@@ -3453,7 +3453,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
     }
 
     var eventName = 'change';
-    if (cordova && (cordova.platformId === "android")) {
+    if ((typeof cordova !== "undefined") && (cordova.platformId === "android")) {
       // the 'change' event doesn't seem to fire on android
       eventName = 'click';
     }
@@ -3544,7 +3544,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
               }
 
 
-              if (cordova && (cordova.platformId === "android")) {
+              if ((typeof cordova !== "undefined") && (cordova.platformId === "android")) {
                 // Show a custom confirmation dialog
                 //
                 navigator.notification.confirm(
