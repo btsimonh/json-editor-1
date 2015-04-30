@@ -114,7 +114,9 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
         this.editors[i].enable();
       }
     }
-    this.switcher.disabled = false;
+    _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
+      item.disabled = false;
+    });
     this._super();
   },
   disable: function () {
@@ -124,8 +126,10 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
           continue;
         this.editors[i].disable();
       }
+      _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
+        item.disabled = true;
+      });
     }
-    this.switcher.disabled = true;
     this._super();
   },
   destroy: function () {

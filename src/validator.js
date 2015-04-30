@@ -62,10 +62,19 @@ JSONEditor.Validator = Class.extend({
         // what type is this value?
         var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
         if (type) {
-          // what type is specified in the cross-reference? Note this is a JAVASCRIPT type.
-          if (schema.requiredIf.propertyPathMatches.matchType === type) {
-            // both the same type, now check values
-            valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+          // what type is specified in the cross-reference? Note this is a JAVASCRIPT type, or RegExp.
+          if ((schema.requiredIf.propertyPathMatches.matchType === type) ||
+                  (("RegExp" === schema.requiredIf.propertyPathMatches.matchType) &&
+                          ("string" === type))
+                  ) {
+
+            if ("RegExp" === schema.requiredIf.propertyPathMatches.matchType) {
+              var regex = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
+              valueMatch = regex.test(fullSchemaValue[schema.requiredIf.propertyPath]);
+            } else {
+              // both the same type (probably string), now check values
+              valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+            }
             if (valueMatch === true) {
               // this one is definitely required. So check that we have it.
               showThisField = true;
