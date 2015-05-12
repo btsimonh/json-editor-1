@@ -163,167 +163,228 @@ editor.on("change",  function() {
         // Default starting schema
         if (!schema) {
           schema = {
-            "type": "object",
-            "theme": "bootstrap3",
-            "iconlib": "fontawesome4",
-            "title": "Foo Inspection",
-            "formNumber": "FMxxx-x",
-            "instructionsHeading": "",
-            "instructions": "This text appears on the PDF",
-            "properties": {
-              "date": {
-                "type": "string",
-                "format": "date",
-                "title": "Date",
-                "default": "2015-01-05"
-              },
-              "Radio": {
-                "type": "radio",
-                "required": true,
-                "title": "Radio",
-                "description": "Example Radio",
-                "enum": [
-                  "Cheese",
-                  "No Cheese"
-                ]
-              },
-              "User": {
-                "title": "Your Name",
-                "type": "string",
-                "description": "example name",
-                "default": "Joe Bloggs"
-              },
-              "Image": {
-                "title": "Image",
-                "type": "imageFile",
-                "format": "imageFile"
-              },
-              "currentLocation": {
-                "type": "string",
-                "format": "geolocation",
-                "title": "Current Location (when reported)",
-                "options": {
-                  "compact": "true"
-                }
-              },
-              "String": {
-                "title": "String",
-                "type": "string",
-                "description": "example string"
-              },
-              "Textarea": {
-                "title": "Textarea",
-                "type": "string",
-                "format": "textarea"
-              },
-              "Checkbox": {
-                "title": "Checkbox",
-                "type": "boolean",
-                "format": "checkbox",
-                "default": false
-              },
-              "Signature": {
-                "title": "Signature",
-                "type": "string",
-                "format": "signature",
-                "description": "sign above",
-                "required": true
-              },
-              "Info": {
-                "title": "Info",
-                "type": "string",
-                "description": "Information-only description",
-                "information_only": true
-              },
-              "ActionItems": {
-                "title": "Action Items",
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "title": "Action Item",
-                  "properties": {
-                    "ItemRef": {
-                      "title": "Item Reference",
-                      "type": "string",
-                      "format": "select",
-                      "enum": ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "B1", "B2", "C1", "C2", "C3", "C4", "D1", "D2", "E1", "E2", "E3", "E4", "E5", "E6", "F1", "F2", "F3", "F4", "F5", "F6", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "H1", "J1", "J2", "J3", "J4", "J5", "J6", "J7", "K1", "K2", "K3", "K4", "K5", "L1", "L2", "L3", "L4", "L5", "M1", "M2", "M3", "M4", "M5", "M6", "N1", "N2", "O1", "O2", "O3", "P1", "P2", "P3", "P4", "P5", "P6"],
-                      "description": "Choose an item reference."
+    "form_id": 1,
+    "type": "object",
+    "title": "Inclusion / Exclusion Data",
+    "formNumber": "FM000-02",
+    "properties": {
+      "patientID": {
+        "type": "string",
+        "title": "Patient ID",
+        "format": "string",
+        "default": "currentPatientID",
+        "readonly": true
+      },
+      "bleeding_diathesis-2": {
+        "field_type": "radio",
+        "demoTemplateUrl": "./views/directive-templates/field/radio.html",
+        "editTemplateUrl": "./views/directive-templates/edit/options.html",
+        "name": "Multiple Choice",
+        "show": true,
+        "displayOrder": 21,
+        "icon": "circle-o",
+        "field_id": "bleeding_diathesis-2",
+        "title": "Bleeding diathesis",
+        "type": "radio",
+        "format": "radio",
+        "description": "",
+        "required": true,
+        "default": "",
+        "field_options": [
+          {
+            "option_id": 1,
+            "option_value": "Yes"
+          },
+          {
+            "option_id": 2,
+            "option_value": "No"
+          }
+        ],
+        "enum": [
+          "Yes",
+          "No"
+        ],
+        "id": 2
+      },
+      "type_of_problem-1": {
+        "field_type": "textfield",
+        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+        "name": "Text",
+        "show": true,
+        "displayOrder": 1,
+        "icon": "font",
+        "field_id": "type_of_problem-1",
+        "title": "Type of Problem",
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "required": true,
+        "default": "",
+        "id": 1,
+        "requiredIf": {
+          "propertyPath": "bleeding_diathesis-2",
+          "propertyPathMatches": {
+            "matchType": "string",
+            "matchExpression": "Yes"
+          },
+          "hideOtherwise": true,
+          "disableOtherwise": true
+        }
+      },
+      "ffp_or_prothrombinex_in_5_days_preop-3": {
+        "field_type": "radio",
+        "demoTemplateUrl": "./views/directive-templates/field/radio.html",
+        "editTemplateUrl": "./views/directive-templates/edit/options.html",
+        "name": "Multiple Choice",
+        "show": true,
+        "displayOrder": 21,
+        "icon": "circle-o",
+        "field_id": "ffp_or_prothrombinex_in_5_days_preop-3",
+        "title": "FFP or Prothrombinex in 5 days preop?",
+        "type": "radio",
+        "format": "radio",
+        "description": "",
+        "required": true,
+        "default": "",
+        "field_options": [
+          {
+            "option_id": 1,
+            "option_value": "Yes"
+          },
+          {
+            "option_id": 2,
+            "option_value": "No"
+          }
+        ],
+        "enum": [
+          "Yes",
+          "No"
+        ],
+        "id": 3
+      },
+      "last_clopidogrelprasugrelticlodipine-4": {
+        "field_type": "textfield",
+        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+        "name": "Text",
+        "show": true,
+        "displayOrder": 1,
+        "icon": "font",
+        "field_id": "last_clopidogrelprasugrelticlodipine-4",
+        "title": "Last Clopidogrel/Prasugrel/Ticlodipine",
+        "type": "string",
+        "format": "text",
+        "description": "Number of days ago",
+        "default": "",
+        "id": 4
+      },
+      "last_aspirin-5": {
+        "field_type": "textfield",
+        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+        "name": "Text",
+        "show": true,
+        "displayOrder": 1,
+        "icon": "font",
+        "field_id": "last_aspirin-5",
+        "title": "Last Aspirin",
+        "type": "string",
+        "format": "text",
+        "description": "Number of days ago",
+        "default": "",
+        "id": 5
+      },
+      "operation_type-7": {
+        "field_type": "dropdown",
+        "demoTemplateUrl": "./views/directive-templates/field/dropdown.html",
+        "editTemplateUrl": "./views/directive-templates/edit/options.html",
+        "name": "Dropdown",
+        "show": true,
+        "displayOrder": 22,
+        "icon": "caret-down",
+        "field_id": "operation_type-7",
+        "title": "Operation Type",
+        "description": "Select all that apply",
+        "type": "array",
+        "format": "select",
+        "required": true,
+        "multiple": true,
+        "default": "",
+        "field_options": [
+          {
+            "option_id": 1,
+            "option_value": "heart transplant"
+          },
+          {
+            "option_id": 2,
+            "option_value": "lung transplant"
+          },
+          {
+            "option_id": 3,
+            "option_value": "cabg"
+          },
+          {
+            "option_id": 4,
+            "option_value": "valve"
+          },
+          {
+            "option_id": 5,
+            "option_value": "aortic root"
+          },
+          {
+            "option_id": 6,
+            "option_value": "aortic arch"
+          },
+          {
+            "option_id": 7,
+            "option_value": "aortic dissection"
+          },
+          {
+            "option_id": 8,
+            "option_value": "other"
+          }
+        ],
+        "enum": [
+          "heart transplant",
+          "lung transplant",
+          "cabg",
+          "valve",
+          "aortic root",
+          "aortic arch",
+          "aortic dissection",
+          "other"
+        ],
+        "id": 7
+      },
+      "type_of_operation-1": {
+        "field_type": "textfield",
+        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+        "name": "Text",
+        "show": true,
+        "displayOrder": 1,
+        "icon": "font",
+        "field_id": "type_of_operation-1",
+        "title": "Type of Operation",
+        "type": "string",
+        "format": "text",
+        "description": "",
+        "default": "",
+        "id": 1,
+        "requiredIf": {
+          "propertyPath": "operation_type-7",
+          "propertyPathMatches": {
+            "matchType": "oneOfSelected",
+            "matchExpression": ["other"]
+          },
+          "hideOtherwise": true,
+          "disableOtherwise": true
+        }
+      }
 
-                    },
-                    "ActionItemDescription": {
-                      "title": "Items requiring action / followup",
-                      "type": "string",
-                      "format": "textarea",
-                      "minLength": 3
-                    },
-                    "RiskLevel": {
-                      "title": "Risk Level",
-                      "type": "radio",
-                      "description": "See below for help on which to choose",
-                      "enum": ["High Risk", "Medium Risk", "Low Risk"]
-
-                    },
-                    "ActionBy": {
-                      "title": "Action By",
-                      "type": "string",
-                      "format": "text",
-                      "required": false
-                    },
-                    "DateBy": {
-                      "title": "Date By",
-                      "type": "string",
-                      "format": "date",
-                      "required": true
-                    },
-                    "CloseOut": {
-                      "title": "Close Out",
-                      "type": "string",
-                      "readonly": true,
-                      "format": "text",
-                      "required": false,
-                      "description": "Leave this blank - it's for the PDF"
-                    },
-                    "Initial": {
-                      "title": "Initial",
-                      "type": "string",
-                      "readonly": true,
-                      "format": "text",
-                      "required": false,
-                      "description": "Leave this blank - it's for the PDF"
-                    },
-                    "RiskLevelDescriptions": {
-                      "title": "Risk Levels",
-                      "type": "object",
-                      "information_only": true,
-                      "properties": {
-                        "HighRisk": {
-                          "type": "string",
-                          "title": "High Risk",
-                          "readonly": true,
-                          "information_only": true,
-                          "description": "Potentially Fatal"
-                        },
-                        "MediumRisk": {
-                          "type": "string",
-                          "title": "Medium Risk",
-                          "readonly": true,
-                          "information_only": true,
-                          "description": "Potential for serious injury"
-                        },
-                        "LowRisk": {
-                          "type": "string",
-                          "title": "Low Risk",
-                          "readonly": true,
-                          "information_only": true,
-                          "description": "Potential for minor injury"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          };
+    }
+  };
         }
 
         // Divs/textareas on the page

@@ -846,8 +846,8 @@ JSONEditor.Validator = Class.extend({
                   ) {
 
             if ("RegExp" === schema.requiredIf.propertyPathMatches.matchType) {
-              var regex = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
-              valueMatch = regex.test(fullSchemaValue[schema.requiredIf.propertyPath]);
+              var regexp = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
+              valueMatch = regexp.test(fullSchemaValue[schema.requiredIf.propertyPath]);
             } else {
               // both the same type (probably string), now check values
               valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
@@ -872,6 +872,38 @@ JSONEditor.Validator = Class.extend({
             } else {
               // the value we have differs from the matchExpression. So it's not required. we're good. return.
               hasError = false;
+            }
+          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected") &&
+                  ("object" === type)) { // javascript arrays - testing for selected values
+
+
+            // now check to see if the value we're looking for is in the set of selected values
+            var testValuesArray = schema.requiredIf.propertyPathMatches.matchExpression;
+            var actualValuesArray = fullSchemaValue[schema.requiredIf.propertyPath];
+
+            if (Array.isArray(testValuesArray) && Array.isArray(actualValuesArray)) {
+              // test each of our test values (defined in the schema) to see if any have been selected.
+              valueMatch = testValuesArray.some(function (testValue, index, array) {
+                return (actualValuesArray.indexOf(testValue) !== -1);
+              }, this);
+            }
+            if (valueMatch === true) {
+              // this one is definitely required. So display it.
+              showThisField = true;
+              if (schema.type === "array") {
+                // make sure we have at least one
+                if (value && (value.length > 0)) {
+                  // we're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              } else {
+                // not an array. Check that value is "truthy".
+                if (!!value || schema.type === "object") { // if it's an object, properties get validated.
+                  // value is "truthy". We're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              }
+
             }
           }
 
@@ -968,9 +1000,17 @@ JSONEditor.Validator = Class.extend({
       // `enum`
       if (schema.enum) {
         valid = false;
-        for (i = 0; i < schema.enum.length; i++) {
-          if (stringified === JSON.stringify(schema.enum[i]))
-            valid = true;
+        if (Array.isArray(schema.enum) && Array.isArray(value)) {
+          // check that every value appears in the schema's enum property
+          valid = value.every(function (currentValue, index, array) {
+            return (schema.enum.indexOf(currentValue) !== -1);
+          }, this);
+        } else {
+          for (i = 0; i < schema.enum.length; i++) {
+            if (stringified === JSON.stringify(schema.enum[i]))
+              valid = true;
+
+          }
         }
         if (!valid) {
           errors.push({
@@ -5515,60 +5555,97 @@ JSONEditor.defaults.editors.checkbox = JSONEditor.AbstractEditor.extend({
 });
 
 JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
-  setValue: function(value,initial) {
-    value = this.typecast(value||'');
+  setValue: function (value, initial) {
+    value = this.typecast(value || '');
 
     // Sanitize value before setting it
     var sanitized = value;
-    if(this.enum_values.indexOf(sanitized) < 0) {
+    if (Array.isArray(sanitized)) {
+      if ((this.schema.multiple === true) && (!!value)) { // we want multiple values, and we have some sort of value
+        sanitized = sanitized.filter(function (element) {
+          return (this.enum_values.indexOf(element) >= 0);
+        }, this);
+      }
+    } else if (this.enum_values.indexOf(sanitized) < 0) { // not an array
       sanitized = this.enum_values[0];
     }
 
-    if(this.value === sanitized) {
+    if (this.value === sanitized) {
       return;
     }
 
-    this.input.value = this.enum_options[this.enum_values.indexOf(sanitized)];
-    if(this.select2) this.select2.select2('val',this.input.value);
+    if (Array.isArray(sanitized)) {
+      // loop through all the <option> values, deselecting them.
+      this.enum_values.forEach(function (thisValue, index) {
+        this.input.options[index].selected = false;
+      }, this);
+      // loop through our selected values, setting the corresponding <option> elements.
+      sanitized.forEach(function (currentValue) {
+        this.input.options[this.enum_values.indexOf(currentValue)].selected = true;
+      }, this);
+    } else { // a single-value (i.e. normal) select. Set its value.
+      this.input.value = this.enum_options[this.enum_values.indexOf(sanitized)];
+    }
+    if (this.select2)
+      this.select2.select2('val', this.input.value);
     this.value = sanitized;
     this.onChange();
   },
-  register: function() {
+  register: function () {
     this._super();
-    if(!this.input) return;
-    this.input.setAttribute('name',this.formname);
+    if (!this.input)
+      return;
+    this.input.setAttribute('name', this.formname);
   },
-  unregister: function() {
+  unregister: function () {
     this._super();
-    if(!this.input) return;
+    if (!this.input)
+      return;
     this.input.removeAttribute('name');
   },
-  getNumColumns: function() {
-    if(!this.enum_options) return 3;
+  getNumColumns: function () {
+    if (!this.enum_options)
+      return 3;
     var longest_text = this.getTitle().length;
-    for(var i=0; i<this.enum_options.length; i++) {
-      longest_text = Math.max(longest_text,this.enum_options[i].length+4);
+    for (var i = 0; i < this.enum_options.length; i++) {
+      longest_text = Math.max(longest_text, this.enum_options[i].length + 4);
     }
-    return Math.min(12,Math.max(longest_text/7,2));
+    return Math.min(12, Math.max(longest_text / 7, 2));
   },
-  typecast: function(value) {
-    if(this.schema.type === "boolean") {
+  typecast: function (value) {
+    // check if this is an array
+    if (Array.isArray(value)) {
+      if ((this.schema.multiple === true) && (!!value)) { // we want multiple values, and we have some sort of value
+        // typecast the array components
+        var typecastValues = [];
+        for (var i = 0; i < value.length; i++) {
+          typecastValues.push(this.typecastPrimitive(value[i]));
+        }
+        return typecastValues;
+
+      }
+    }
+    return this.typecastPrimitive(value);
+
+  },
+  typecastPrimitive: function (value) {
+    if (this.schema.type === "boolean") {
       return !!value;
     }
-    else if(this.schema.type === "number") {
-      return 1*value;
+    else if (this.schema.type === "number") {
+      return 1 * value;
     }
-    else if(this.schema.type === "integer") {
-      return Math.floor(value*1);
+    else if (this.schema.type === "integer") {
+      return Math.floor(value * 1);
     }
     else {
-      return ""+value;
+      return "" + value;
     }
   },
-  getValue: function() {
+  getValue: function () {
     return this.value;
   },
-  preBuild: function() {
+  preBuild: function () {
     var self = this;
     this.input_type = 'select';
     this.enum_options = [];
@@ -5576,31 +5653,31 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     this.enum_display = [];
 
     // Enum options enumerated
-    if(this.schema.enum) {
+    if (this.schema.enum) {
       var display = this.schema.options && this.schema.options.enum_titles || [];
-      
-      $each(this.schema.enum,function(i,option) {
-        self.enum_options[i] = ""+option;
-        self.enum_display[i] = ""+(display[i] || option);
+
+      $each(this.schema.enum, function (i, option) {
+        self.enum_options[i] = "" + option;
+        self.enum_display[i] = "" + (display[i] || option);
         self.enum_values[i] = self.typecast(option);
       });
     }
     // Boolean
-    else if(this.schema.type === "boolean") {
-      self.enum_display = ['true','false'];
-      self.enum_options = ['1',''];
-      self.enum_values = [true,false];
+    else if (this.schema.type === "boolean") {
+      self.enum_display = ['true', 'false'];
+      self.enum_options = ['1', ''];
+      self.enum_values = [true, false];
     }
     // Dynamic Enum
-    else if(this.schema.enumSource) {
+    else if (this.schema.enumSource) {
       this.enumSource = [];
       this.enum_display = [];
       this.enum_options = [];
       this.enum_values = [];
-      
+
       // Shortcut declaration for using a single array
-      if(!(Array.isArray(this.schema.enumSource))) {
-        if(this.schema.enumValue) {
+      if (!(Array.isArray(this.schema.enumSource))) {
+        if (this.schema.enumValue) {
           this.enumSource = [
             {
               source: this.schema.enumSource,
@@ -5617,33 +5694,33 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
         }
       }
       else {
-        for(i=0; i<this.schema.enumSource.length; i++) {
+        for (i = 0; i < this.schema.enumSource.length; i++) {
           // Shorthand for watched variable
-          if(typeof this.schema.enumSource[i] === "string") {
+          if (typeof this.schema.enumSource[i] === "string") {
             this.enumSource[i] = {
               source: this.schema.enumSource[i]
             };
           }
           // Make a copy of the schema
-          else if(!(Array.isArray(this.schema.enumSource[i]))) {
-            this.enumSource[i] = $extend({},this.schema.enumSource[i]);
+          else if (!(Array.isArray(this.schema.enumSource[i]))) {
+            this.enumSource[i] = $extend({}, this.schema.enumSource[i]);
           }
           else {
             this.enumSource[i] = this.schema.enumSource[i];
           }
         }
       }
-      
+
       // Now, enumSource is an array of sources
       // Walk through this array and fix up the values
-      for(i=0; i<this.enumSource.length; i++) {
-        if(this.enumSource[i].value) {
+      for (i = 0; i < this.enumSource.length; i++) {
+        if (this.enumSource[i].value) {
           this.enumSource[i].value = this.jsoneditor.compileTemplate(this.enumSource[i].value, this.template_engine);
         }
-        if(this.enumSource[i].title) {
+        if (this.enumSource[i].title) {
           this.enumSource[i].title = this.jsoneditor.compileTemplate(this.enumSource[i].title, this.template_engine);
         }
-        if(this.enumSource[i].filter) {
+        if (this.enumSource[i].filter) {
           this.enumSource[i].filter = this.jsoneditor.compileTemplate(this.enumSource[i].filter, this.template_engine);
         }
       }
@@ -5653,22 +5730,28 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
       throw "'select' editor requires the enum property to be set.";
     }
   },
-  build: function() {
+  build: function () {
     var self = this;
-    if(!this.options.compact) this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
-    if(this.schema.description) this.description = this.theme.getFormInputDescription(this.schema.description);
+    if (!this.options.compact)
+      this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
+    if (this.schema.description)
+      this.description = this.theme.getFormInputDescription(this.schema.description);
 
-    if(this.options.compact) this.container.setAttribute('class',this.container.getAttribute('class')+' compact');
+    if (this.options.compact)
+      this.container.setAttribute('class', this.container.getAttribute('class') + ' compact');
 
     this.input = this.theme.getSelectInput(this.enum_options);
-    this.theme.setSelectOptions(this.input,this.enum_options,this.enum_display);
+    this.theme.setSelectOptions(this.input, this.enum_options, this.enum_display);
 
-    if(this.schema.readOnly || this.schema.readonly) {
+    if (this.schema.readOnly || this.schema.readonly) {
       this.always_disabled = true;
       this.input.disabled = true;
     }
 
-    this.input.addEventListener('change',function(e) {
+    var multiple = (this.schema.multiple) || false;
+    this.input.multiple = multiple;
+
+    this.input.addEventListener('change', function (e) {
       e.preventDefault();
       e.stopPropagation();
       self.onInputChange();
@@ -5679,26 +5762,37 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
 
     this.value = this.enum_values[0];
   },
-  onInputChange: function() {
-    var val = this.input.value;
+  onInputChange: function () {
+    var sanitized;
+    if (this.input.selectedOptions) { // we're dealing with a select, otherwise it might be a radio
+      sanitized = [];
+      for (var i = 0; i < this.input.selectedOptions.length; i++) {
+        if (this.enum_options.indexOf(this.input.selectedOptions[i].value) !== -1) {
+          sanitized.push(this.input.selectedOptions[i].value);
+        }
+      }
+    } else { // radio (or some other extension of this class)
+      var val = this.input.value;
 
-    var sanitized = val;
-    if(this.enum_options.indexOf(val) === -1) {
-      sanitized = this.enum_options[0];
+      sanitized = val;
+      if (this.enum_options.indexOf(val) === -1) { // illegal value. default to first.
+        sanitized = this.enum_options[0];
+
+      }
     }
-
-    this.value = this.enum_values[this.enum_options.indexOf(val)];
-
+    this.value = sanitized;
     this.onChange(true);
-  },
-  setupSelect2: function() {
+  }
+  ,
+  setupSelect2: function () {
     // If the Select2 library is loaded use it when we have lots of items
-    if(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && (this.enum_options.length > 2 || (this.enum_options.length && this.enumSource))) {
-      var options = $extend({},JSONEditor.plugins.select2);
-      if(this.schema.options && this.schema.options.select2_options) options = $extend(options,this.schema.options.select2_options);
+    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && (this.enum_options.length > 2 || (this.enum_options.length && this.enumSource))) {
+      var options = $extend({}, JSONEditor.plugins.select2);
+      if (this.schema.options && this.schema.options.select2_options)
+        options = $extend(options, this.schema.options.select2_options);
       this.select2 = window.jQuery(this.input).select2(options);
       var self = this;
-      this.select2.on('select2-blur',function() {
+      this.select2.on('select2-blur', function () {
         self.input.value = self.select2.select2('val');
         self.onInputChange();
       });
@@ -5707,50 +5801,51 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
       this.select2 = null;
     }
   },
-  postBuild: function() {
+  postBuild: function () {
     this._super();
     this.theme.afterInputReady(this.input);
     this.setupSelect2();
   },
-  onWatchedFieldChange: function() {
+  onWatchedFieldChange: function () {
     var self = this, vars, j;
-    
+
     // If this editor uses a dynamic select box
-    if(this.enumSource) {
+    if (this.enumSource) {
       vars = this.getWatchedFieldValues();
       var select_options = [];
       var select_titles = [];
-      
-      for(var i=0; i<this.enumSource.length; i++) {
+
+      for (var i = 0; i < this.enumSource.length; i++) {
         // Constant values
-        if(Array.isArray(this.enumSource[i])) {
+        if (Array.isArray(this.enumSource[i])) {
           select_options = select_options.concat(this.enumSource[i]);
           select_titles = select_titles.concat(this.enumSource[i]);
         }
         // A watched field
-        else if(vars[this.enumSource[i].source]) {
+        else if (vars[this.enumSource[i].source]) {
           var items = vars[this.enumSource[i].source];
-          
+
           // Only use a predefined part of the array
-          if(this.enumSource[i].slice) {
-            items = Array.prototype.slice.apply(items,this.enumSource[i].slice);
+          if (this.enumSource[i].slice) {
+            items = Array.prototype.slice.apply(items, this.enumSource[i].slice);
           }
           // Filter the items
-          if(this.enumSource[i].filter) {
+          if (this.enumSource[i].filter) {
             var new_items = [];
-            for(j=0; j<items.length; j++) {
-              if(this.enumSource[i].filter({i:j,item:items[j]})) new_items.push(items[j]);
+            for (j = 0; j < items.length; j++) {
+              if (this.enumSource[i].filter({i: j, item: items[j]}))
+                new_items.push(items[j]);
             }
             items = new_items;
           }
-          
+
           var item_titles = [];
           var item_values = [];
-          for(j=0; j<items.length; j++) {
+          for (j = 0; j < items.length; j++) {
             var item = items[j];
-            
+
             // Rendered value
-            if(this.enumSource[i].value) {
+            if (this.enumSource[i].value) {
               item_values[j] = this.enumSource[i].value({
                 i: j,
                 item: item
@@ -5760,9 +5855,9 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
             else {
               item_values[j] = items[j];
             }
-            
+
             // Rendered title
-            if(this.enumSource[i].title) {
+            if (this.enumSource[i].title) {
               item_titles[j] = this.enumSource[i].title({
                 i: j,
                 item: item
@@ -5773,61 +5868,68 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
               item_titles[j] = item_values[j];
             }
           }
-          
+
           // TODO: sort
-          
+
           select_options = select_options.concat(item_values);
           select_titles = select_titles.concat(item_titles);
         }
       }
-      
+
       var prev_value = this.value;
-      
+
       this.theme.setSelectOptions(this.input, select_options, select_titles);
       this.enum_options = select_options;
       this.enum_display = select_titles;
       this.enum_values = select_options;
-      
-      if(this.select2) {
+
+      if (this.select2) {
         this.select2.select2('destroy');
       }
-      
+
       // If the previous value is still in the new select options, stick with it
-      if(select_options.indexOf(prev_value) !== -1) {
+      if (select_options.indexOf(prev_value) !== -1) {
         this.input.value = prev_value;
         this.value = prev_value;
       }
       // Otherwise, set the value to the first select option
       else {
         this.input.value = select_options[0];
-        this.value = select_options[0] || "";  
-        if(this.parent) this.parent.onChildEditorChange(this);
-        else this.jsoneditor.onChange();
+        this.value = select_options[0] || "";
+        if (this.parent)
+          this.parent.onChildEditorChange(this);
+        else
+          this.jsoneditor.onChange();
         this.jsoneditor.notifyWatchers(this.path);
       }
-      
+
       this.setupSelect2();
     }
 
     this._super();
   },
-  enable: function() {
-    if(!this.always_disabled) {
+  enable: function () {
+    if (!this.always_disabled) {
       this.input.disabled = false;
-      if(this.select2) this.select2.select2("enable",true);
+      if (this.select2)
+        this.select2.select2("enable", true);
     }
     this._super();
   },
-  disable: function() {
+  disable: function () {
     this.input.disabled = true;
-    if(this.select2) this.select2.select2("enable",false);
+    if (this.select2)
+      this.select2.select2("enable", false);
     this._super();
   },
-  destroy: function() {
-    if(this.label && this.label.parentNode) this.label.parentNode.removeChild(this.label);
-    if(this.description && this.description.parentNode) this.description.parentNode.removeChild(this.description);
-    if(this.input && this.input.parentNode) this.input.parentNode.removeChild(this.input);
-    if(this.select2) {
+  destroy: function () {
+    if (this.label && this.label.parentNode)
+      this.label.parentNode.removeChild(this.label);
+    if (this.description && this.description.parentNode)
+      this.description.parentNode.removeChild(this.description);
+    if (this.input && this.input.parentNode)
+      this.input.parentNode.removeChild(this.input);
+    if (this.select2) {
       this.select2.select2('destroy');
       this.select2 = null;
     }
@@ -5836,9 +5938,10 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
   }
 });
 
+/* global _ */
 JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
-  setValue: function () {
-    this._super();
+  setValue: function (value, initial)  {
+    this._super(value, initial);
   },
   register: function () {
     if (this.editors) {
@@ -5952,9 +6055,14 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
         this.editors[i].enable();
       }
     }
-    _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
-      item.disabled = false;
-    });
+    var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
+    if (radios && radios.length > 0) { // loop through each radio and enable it.
+      radios.forEach(
+              function (item) {
+                item.disabled = false;
+              }
+      );
+    }
     this._super();
   },
   disable: function () {
@@ -5964,9 +6072,15 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
           continue;
         this.editors[i].disable();
       }
-      _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
-        item.disabled = true;
-      });
+      var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
+      if (radios && radios.length > 0) { // loop through each radio and disable it.
+        radios.forEach(
+                function (item) {
+                  item.disabled = true;
+                }
+        );
+      }
+
     }
     this._super();
   },

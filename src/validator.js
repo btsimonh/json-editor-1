@@ -69,8 +69,8 @@ JSONEditor.Validator = Class.extend({
                   ) {
 
             if ("RegExp" === schema.requiredIf.propertyPathMatches.matchType) {
-              var regex = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
-              valueMatch = regex.test(fullSchemaValue[schema.requiredIf.propertyPath]);
+              var regexp = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
+              valueMatch = regexp.test(fullSchemaValue[schema.requiredIf.propertyPath]);
             } else {
               // both the same type (probably string), now check values
               valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
@@ -95,6 +95,38 @@ JSONEditor.Validator = Class.extend({
             } else {
               // the value we have differs from the matchExpression. So it's not required. we're good. return.
               hasError = false;
+            }
+          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected") &&
+                  ("object" === type)) { // javascript arrays - testing for selected values
+
+
+            // now check to see if the value we're looking for is in the set of selected values
+            var testValuesArray = schema.requiredIf.propertyPathMatches.matchExpression;
+            var actualValuesArray = fullSchemaValue[schema.requiredIf.propertyPath];
+
+            if (Array.isArray(testValuesArray) && Array.isArray(actualValuesArray)) {
+              // test each of our test values (defined in the schema) to see if any have been selected.
+              valueMatch = testValuesArray.some(function (testValue, index, array) {
+                return (actualValuesArray.indexOf(testValue) !== -1);
+              }, this);
+            }
+            if (valueMatch === true) {
+              // this one is definitely required. So display it.
+              showThisField = true;
+              if (schema.type === "array") {
+                // make sure we have at least one
+                if (value && (value.length > 0)) {
+                  // we're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              } else {
+                // not an array. Check that value is "truthy".
+                if (!!value || schema.type === "object") { // if it's an object, properties get validated.
+                  // value is "truthy". We're good. return.
+                  hasError = false;
+                } // else value is no good, will fall through to errors.push
+              }
+
             }
           }
 
@@ -191,9 +223,17 @@ JSONEditor.Validator = Class.extend({
       // `enum`
       if (schema.enum) {
         valid = false;
-        for (i = 0; i < schema.enum.length; i++) {
-          if (stringified === JSON.stringify(schema.enum[i]))
-            valid = true;
+        if (Array.isArray(schema.enum) && Array.isArray(value)) {
+          // check that every value appears in the schema's enum property
+          valid = value.every(function (currentValue, index, array) {
+            return (schema.enum.indexOf(currentValue) !== -1);
+          }, this);
+        } else {
+          for (i = 0; i < schema.enum.length; i++) {
+            if (stringified === JSON.stringify(schema.enum[i]))
+              valid = true;
+
+          }
         }
         if (!valid) {
           errors.push({
