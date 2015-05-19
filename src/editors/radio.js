@@ -1,6 +1,39 @@
+/* global _ */
 JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
-  setValue: function () {
-    this._super();
+  setValue: function (value, initial) {
+    value = this.typecast(value || '');
+
+    // Sanitize value before setting it
+    var sanitized = value;
+    if (this.enum_values.indexOf(sanitized) < 0) { // not found, default to first
+      this.input.value = "";
+      this.value = "";
+      return;
+    }
+
+    if (this.value === sanitized) {
+      return;
+    }
+
+    this.value = sanitized;
+    var elem = this.input.querySelector('input[type=radio][value="' + value + '"]');
+    elem.checked = true;
+    var radioNodeList = this.input.querySelectorAll('input[type=radio]');
+    for (var i = 0; i<radioNodeList.length; i++) {
+      var item = radioNodeList[i];
+      item.parentElement.classList.remove("active");
+    }
+
+
+    elem.parentElement.classList.add("active"); // add the active CSS class to the label
+
+    this.input.value = sanitized;
+    this.onChange();
+
+  },
+  getDefault: function() {
+    if(this.schema.default) return this.schema.default;
+    return; // return undefined
   },
   register: function () {
     if (this.editors) {
@@ -25,10 +58,10 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
     }
   },
   getNumColumns: function () {
-    this._super();
+    return this._super();
   },
-  typecast: function () {
-    this._super();
+  typecast: function (value) {
+    return this._super(value);
   },
   getValue: function () {
     var checkedElem = document.querySelector("input[name=\"" + this.path + "\"]:checked");
@@ -114,9 +147,14 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
         this.editors[i].enable();
       }
     }
-    _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
-      item.disabled = false;
-    });
+    var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
+    if (radios && radios.length > 0) { // loop through each radio and enable it.
+      radios.forEach(
+              function (item) {
+                item.disabled = false;
+              }
+      );
+    }
     this._super();
   },
   disable: function () {
@@ -126,9 +164,15 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
           continue;
         this.editors[i].disable();
       }
-      _.each(document.querySelectorAll("input[name=\"" + this.path + "\"]"), function (item, index) {
-        item.disabled = true;
-      });
+      var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
+      if (radios && radios.length > 0) { // loop through each radio and disable it.
+        radios.forEach(
+                function (item) {
+                  item.disabled = true;
+                }
+        );
+      }
+
     }
     this._super();
   },
