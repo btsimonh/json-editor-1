@@ -17,15 +17,23 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
 
     this.value = sanitized;
     var elem = this.input.querySelector('input[type=radio][value="' + value + '"]');
-    elem.checked = true MIKE ITS BROKEN HERE YOU NEED TO DO SOMETHING LIKE THIS:
-            this.input.querySelectorAll('input[type=radio]').forEach(function(item) { item.parentElement.classList.remove("active"); });
-    
-    
+    elem.checked = true;
+    var radioNodeList = this.input.querySelectorAll('input[type=radio]');
+    for (var i = 0; i<radioNodeList.length; i++) {
+      var item = radioNodeList[i];
+      item.parentElement.classList.remove("active");
+    }
+
+
     elem.parentElement.classList.add("active"); // add the active CSS class to the label
-    
+
     this.input.value = sanitized;
     this.onChange();
 
+  },
+  getDefault: function() {
+    if(this.schema.default) return this.schema.default;
+    return; // return undefined
   },
   register: function () {
     if (this.editors) {

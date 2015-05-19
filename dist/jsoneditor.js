@@ -827,6 +827,18 @@ JSONEditor.Validator = Class.extend({
      *    
      * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
      *  it is hidden and disabled.
+     *  
+     *  Or, to test for a particular value in an array property:
+     *        "requiredIf": {
+     *        "propertyPath": "operation_type-7",
+     *        "propertyPathMatches": {
+     *          "matchType": "oneOfSelected",
+     *          "matchExpression": [
+     *            "other"
+     *          ]
+     *        }
+     *        
+     * This will test an array of strings, defined elsewhere, to see if any items in the array have value "other".
      */
     if (schema.requiredIf) {
       var hasError = true, // start by assuming that this is required and not supplied.
@@ -873,19 +885,26 @@ JSONEditor.Validator = Class.extend({
               // the value we have differs from the matchExpression. So it's not required. we're good. return.
               hasError = false;
             }
-          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected") &&
-                  ("object" === type)) { // javascript arrays - testing for selected values
+          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected")) { // javascript arrays - testing for selected values
 
 
             // now check to see if the value we're looking for is in the set of selected values
             var testValuesArray = schema.requiredIf.propertyPathMatches.matchExpression;
             var actualValuesArray = fullSchemaValue[schema.requiredIf.propertyPath];
 
-            if (Array.isArray(testValuesArray) && Array.isArray(actualValuesArray)) {
-              // test each of our test values (defined in the schema) to see if any have been selected.
-              valueMatch = testValuesArray.some(function (testValue, index, array) {
-                return (actualValuesArray.indexOf(testValue) !== -1);
-              }, this);
+            if (Array.isArray(testValuesArray)) {
+              if (Array.isArray(actualValuesArray)) {
+                // test values are an array, actual selected values are also an array.
+                // test each of our test values (defined in the schema) to see if any have been selected.
+                valueMatch = testValuesArray.some(function (testValue, index, array) {
+                  return (actualValuesArray.indexOf(testValue) !== -1);
+                }, this);
+              } else {
+                // our test values are an array, but the actual values are not.
+                var actualValue = actualValuesArray; // it's not actually an array.
+                // test each of our test values (defined in the schema) to see if any match the selected value.
+                valueMatch = (testValuesArray.indexOf(actualValue) !== -1);
+              }
             }
             if (valueMatch === true) {
               // this one is definitely required. So display it.
@@ -904,6 +923,8 @@ JSONEditor.Validator = Class.extend({
                 } // else value is no good, will fall through to errors.push
               }
 
+            } else { // the dependant value was not selected, so this field is not required.
+              hasError = false;
             }
           }
 
@@ -950,7 +971,7 @@ JSONEditor.Validator = Class.extend({
 
           // Can't do any more validation at this point
           return errors;
-        } else if (
+        } else if (// signature is required
                 schema.format &&
                 (schema.format === "signature") &&
                 typeof value === "string") {
@@ -976,6 +997,21 @@ JSONEditor.Validator = Class.extend({
             } catch (e) {
               console.error(e);
             }
+          }
+        } else if (// array of strings (select with multiple) is required
+                schema.format &&
+                (schema.format === "string") &&
+                (schema.type === "array") &&
+                schema.multiple &&
+                schema.multiple === true) {
+          // value should be an array...
+          if (value && value.length === 0) {
+            // hasn't been selected.
+            errors.push({
+              path: path,
+              property: 'required',
+              message: this.translate("error_notset")
+            });
           }
         }
 
@@ -5731,6 +5767,7 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     }
   },
   build: function () {
+    var multipleSelect;
     var self = this;
     if (!this.options.compact)
       this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
@@ -5748,8 +5785,8 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
       this.input.disabled = true;
     }
 
-    var multiple = (this.schema.multiple) || false;
-    this.input.multiple = multiple;
+    multipleSelect = (this.schema.multiple) || false;
+    this.input.multiple = multipleSelect;
 
     this.input.addEventListener('change', function (e) {
       e.preventDefault();
@@ -5763,8 +5800,10 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     this.value = this.enum_values[0];
   },
   onInputChange: function () {
-    var sanitized;
-    if (this.input.selectedOptions) { // we're dealing with a select, otherwise it might be a radio
+    var sanitized, isMulti;
+    
+    isMulti = this.schema.multiple || false;
+    if (this.input.selectedOptions && isMulti) { // we're dealing with a select, otherwise it might be a radio
       sanitized = [];
       for (var i = 0; i < this.input.selectedOptions.length; i++) {
         if (this.enum_options.indexOf(this.input.selectedOptions[i].value) !== -1) {
@@ -5782,8 +5821,7 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     }
     this.value = sanitized;
     this.onChange(true);
-  }
-  ,
+  },
   setupSelect2: function () {
     // If the Select2 library is loaded use it when we have lots of items
     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && (this.enum_options.length > 2 || (this.enum_options.length && this.enumSource))) {
@@ -5806,6 +5844,28 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     this.theme.afterInputReady(this.input);
     this.setupSelect2();
   },
+  showValidationErrors: function(errors) {
+    var self = this;
+    
+    if(this.jsoneditor.options.show_errors === "always") {}
+    else if(!this.is_dirty && this.previous_error_setting===this.jsoneditor.options.show_errors) return;
+    
+    this.previous_error_setting = this.jsoneditor.options.show_errors;
+
+    var messages = [];
+    $each(errors,function(i,error) {
+      if(error.path === self.path) {
+        messages.push(error.message);
+      }
+    });
+
+    if(messages.length) {
+      this.theme.addInputError(this.input, messages.join('. ')+'.');
+    }
+    else {
+      this.theme.removeInputError(this.input);
+    }
+  },  
   onWatchedFieldChange: function () {
     var self = this, vars, j;
 
@@ -5957,15 +6017,23 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
 
     this.value = sanitized;
     var elem = this.input.querySelector('input[type=radio][value="' + value + '"]');
-    elem.checked = true MIKE ITS BROKEN HERE YOU NEED TO DO SOMETHING LIKE THIS:
-            this.input.querySelectorAll('input[type=radio]').forEach(function(item) { item.parentElement.classList.remove("active"); });
-    
-    
+    elem.checked = true;
+    var radioNodeList = this.input.querySelectorAll('input[type=radio]');
+    for (var i = 0; i<radioNodeList.length; i++) {
+      var item = radioNodeList[i];
+      item.parentElement.classList.remove("active");
+    }
+
+
     elem.parentElement.classList.add("active"); // add the active CSS class to the label
-    
+
     this.input.value = sanitized;
     this.onChange();
 
+  },
+  getDefault: function() {
+    if(this.schema.default) return this.schema.default;
+    return; // return undefined
   },
   register: function () {
     if (this.editors) {
@@ -8383,8 +8451,9 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.enum) {
     if (schema.type === "radio") {
       return "radio";
-    }
-    else if(schema.type === "array" || schema.type === "object") {
+    } else if ((schema.type === "array") && (schema.format === "select") && (schema.multiple === true)) {
+      return "select";
+    } else if(schema.type === "array" || schema.type === "object") {
       return "enum";
     } 
     else if(schema.type === "number" || schema.type === "integer" || schema.type === "string") {

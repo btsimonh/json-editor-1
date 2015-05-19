@@ -175,6 +175,7 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     }
   },
   build: function () {
+    var multipleSelect;
     var self = this;
     if (!this.options.compact)
       this.header = this.label = this.theme.getFormInputLabel(this.getTitle());
@@ -192,8 +193,8 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
       this.input.disabled = true;
     }
 
-    var multiple = (this.schema.multiple) || false;
-    this.input.multiple = multiple;
+    multipleSelect = (this.schema.multiple) || false;
+    this.input.multiple = multipleSelect;
 
     this.input.addEventListener('change', function (e) {
       e.preventDefault();
@@ -207,8 +208,10 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     this.value = this.enum_values[0];
   },
   onInputChange: function () {
-    var sanitized;
-    if (this.input.selectedOptions) { // we're dealing with a select, otherwise it might be a radio
+    var sanitized, isMulti;
+    
+    isMulti = this.schema.multiple || false;
+    if (this.input.selectedOptions && isMulti) { // we're dealing with a select, otherwise it might be a radio
       sanitized = [];
       for (var i = 0; i < this.input.selectedOptions.length; i++) {
         if (this.enum_options.indexOf(this.input.selectedOptions[i].value) !== -1) {
@@ -226,8 +229,7 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     }
     this.value = sanitized;
     this.onChange(true);
-  }
-  ,
+  },
   setupSelect2: function () {
     // If the Select2 library is loaded use it when we have lots of items
     if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2 && (this.enum_options.length > 2 || (this.enum_options.length && this.enumSource))) {
@@ -250,6 +252,28 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
     this.theme.afterInputReady(this.input);
     this.setupSelect2();
   },
+  showValidationErrors: function(errors) {
+    var self = this;
+    
+    if(this.jsoneditor.options.show_errors === "always") {}
+    else if(!this.is_dirty && this.previous_error_setting===this.jsoneditor.options.show_errors) return;
+    
+    this.previous_error_setting = this.jsoneditor.options.show_errors;
+
+    var messages = [];
+    $each(errors,function(i,error) {
+      if(error.path === self.path) {
+        messages.push(error.message);
+      }
+    });
+
+    if(messages.length) {
+      this.theme.addInputError(this.input, messages.join('. ')+'.');
+    }
+    else {
+      this.theme.removeInputError(this.input);
+    }
+  },  
   onWatchedFieldChange: function () {
     var self = this, vars, j;
 

@@ -50,6 +50,18 @@ JSONEditor.Validator = Class.extend({
      *    
      * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
      *  it is hidden and disabled.
+     *  
+     *  Or, to test for a particular value in an array property:
+     *        "requiredIf": {
+     *        "propertyPath": "operation_type-7",
+     *        "propertyPathMatches": {
+     *          "matchType": "oneOfSelected",
+     *          "matchExpression": [
+     *            "other"
+     *          ]
+     *        }
+     *        
+     * This will test an array of strings, defined elsewhere, to see if any items in the array have value "other".
      */
     if (schema.requiredIf) {
       var hasError = true, // start by assuming that this is required and not supplied.
@@ -96,19 +108,26 @@ JSONEditor.Validator = Class.extend({
               // the value we have differs from the matchExpression. So it's not required. we're good. return.
               hasError = false;
             }
-          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected") &&
-                  ("object" === type)) { // javascript arrays - testing for selected values
+          } else if ((schema.requiredIf.propertyPathMatches.matchType === "oneOfSelected")) { // javascript arrays - testing for selected values
 
 
             // now check to see if the value we're looking for is in the set of selected values
             var testValuesArray = schema.requiredIf.propertyPathMatches.matchExpression;
             var actualValuesArray = fullSchemaValue[schema.requiredIf.propertyPath];
 
-            if (Array.isArray(testValuesArray) && Array.isArray(actualValuesArray)) {
-              // test each of our test values (defined in the schema) to see if any have been selected.
-              valueMatch = testValuesArray.some(function (testValue, index, array) {
-                return (actualValuesArray.indexOf(testValue) !== -1);
-              }, this);
+            if (Array.isArray(testValuesArray)) {
+              if (Array.isArray(actualValuesArray)) {
+                // test values are an array, actual selected values are also an array.
+                // test each of our test values (defined in the schema) to see if any have been selected.
+                valueMatch = testValuesArray.some(function (testValue, index, array) {
+                  return (actualValuesArray.indexOf(testValue) !== -1);
+                }, this);
+              } else {
+                // our test values are an array, but the actual values are not.
+                var actualValue = actualValuesArray; // it's not actually an array.
+                // test each of our test values (defined in the schema) to see if any match the selected value.
+                valueMatch = (testValuesArray.indexOf(actualValue) !== -1);
+              }
             }
             if (valueMatch === true) {
               // this one is definitely required. So display it.
@@ -127,6 +146,8 @@ JSONEditor.Validator = Class.extend({
                 } // else value is no good, will fall through to errors.push
               }
 
+            } else { // the dependant value was not selected, so this field is not required.
+              hasError = false;
             }
           }
 
@@ -173,7 +194,7 @@ JSONEditor.Validator = Class.extend({
 
           // Can't do any more validation at this point
           return errors;
-        } else if (
+        } else if (// signature is required
                 schema.format &&
                 (schema.format === "signature") &&
                 typeof value === "string") {
@@ -199,6 +220,21 @@ JSONEditor.Validator = Class.extend({
             } catch (e) {
               console.error(e);
             }
+          }
+        } else if (// array of strings (select with multiple) is required
+                schema.format &&
+                (schema.format === "string") &&
+                (schema.type === "array") &&
+                schema.multiple &&
+                schema.multiple === true) {
+          // value should be an array...
+          if (value && value.length === 0) {
+            // hasn't been selected.
+            errors.push({
+              path: path,
+              property: 'required',
+              message: this.translate("error_notset")
+            });
           }
         }
 

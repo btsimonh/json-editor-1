@@ -265,8 +265,9 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.enum) {
     if (schema.type === "radio") {
       return "radio";
-    }
-    else if(schema.type === "array" || schema.type === "object") {
+    } else if ((schema.type === "array") && (schema.format === "select") && (schema.multiple === true)) {
+      return "select";
+    } else if(schema.type === "array" || schema.type === "object") {
       return "enum";
     } 
     else if(schema.type === "number" || schema.type === "integer" || schema.type === "string") {
