@@ -6148,8 +6148,9 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
       }
     }
     var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
-    if (radios && radios.length > 0) { // loop through each radio and enable it.
-      radios.forEach(
+    var radioList = Array.prototype.slice.call(radios);
+    if (radioList && radioList.length > 0) { // loop through each radio and enable it.
+      radioList.forEach(
               function (item) {
                 item.disabled = false;
               }
@@ -6165,8 +6166,9 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
         this.editors[i].disable();
       }
       var radios = document.querySelectorAll("input[name=\"" + this.path + "\"]");
-      if (radios && radios.length > 0) { // loop through each radio and disable it.
-        radios.forEach(
+      var radioList = Array.prototype.slice.call(radios);
+      if (radioList && radioList.length > 0) { // loop through each radio and disable it.
+        radioList.forEach(
                 function (item) {
                   item.disabled = true;
                 }
