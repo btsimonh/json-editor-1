@@ -782,6 +782,24 @@ JSONEditor.Validator = Class.extend({
     this.options = {};
     this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
   },
+  getPropByString: function (obj, propString) {
+    if (!propString)
+      return obj;
+
+    var prop, props = propString.split('.');
+
+    for (var i = 0, iLen = props.length - 1; i < iLen; i++) {
+      prop = props[i];
+
+      var candidate = obj[prop];
+      if (candidate !== undefined) {
+        obj = candidate;
+      } else {
+        break;
+      }
+    }
+    return obj[props[i]];
+  },
   validate: function (value) {
     return this._validateSchema(this.schema, value, 'root', value);
   },
@@ -849,7 +867,8 @@ JSONEditor.Validator = Class.extend({
       //  schema.requiredIf.propertyPath
       if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
         // what type is this value?
-        var type = (typeof fullSchemaValue[schema.requiredIf.propertyPath]);
+        var propValue = this.getPropByString(fullSchemaValue, schema.requiredIf.propertyPath);
+        var type = (typeof propValue);
         if (type) {
           // what type is specified in the cross-reference? Note this is a JAVASCRIPT type, or RegExp.
           if ((schema.requiredIf.propertyPathMatches.matchType === type) ||
@@ -859,10 +878,10 @@ JSONEditor.Validator = Class.extend({
 
             if ("RegExp" === schema.requiredIf.propertyPathMatches.matchType) {
               var regexp = new RegExp(schema.requiredIf.propertyPathMatches.matchExpression);
-              valueMatch = regexp.test(fullSchemaValue[schema.requiredIf.propertyPath]);
+              valueMatch = regexp.test(propValue);
             } else {
               // both the same type (probably string), now check values
-              valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === fullSchemaValue[schema.requiredIf.propertyPath]);
+              valueMatch = (schema.requiredIf.propertyPathMatches.matchExpression === propValue);
             }
             if (valueMatch === true) {
               // this one is definitely required. So check that we have it.
@@ -890,7 +909,7 @@ JSONEditor.Validator = Class.extend({
 
             // now check to see if the value we're looking for is in the set of selected values
             var testValuesArray = schema.requiredIf.propertyPathMatches.matchExpression;
-            var actualValuesArray = fullSchemaValue[schema.requiredIf.propertyPath];
+            var actualValuesArray = propValue;
 
             if (Array.isArray(testValuesArray)) {
               if (Array.isArray(actualValuesArray)) {
