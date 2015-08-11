@@ -5,7 +5,19 @@ JSONEditor.Validator = Class.extend({
     this.options = {};
     this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
   },
-  getPropByString: function (obj, propString) {
+  /**
+   * 
+   * @param {object} obj - the object from which to get the value
+   * @param {string} propString - a property string that describes the path to 
+   * the object's property value that we are interested in, separated by dots
+   * @param {boolean} isRelativePropertyPath - true if the propString should be 
+   * treated as relative
+   * @param {string} propertyPathContext - the current context from which 
+   * relative property paths should be calculated
+   * @returns the value of the property, if it is found.
+   */
+  getPropByString: function (obj, propString, isRelativePropertyPath, propertyPathContext) {
+    //TODO: get the last 2 parameters to work.
     if (!propString)
       return obj;
 
@@ -79,6 +91,19 @@ JSONEditor.Validator = Class.extend({
      *          ]
      *        }
      *        
+     *  To test for a particular value using a relative path 
+     *  (works with other matchTypes):
+     *        "requiredIf": {
+     *          "propertyPath": "../operation_type-7",
+     *          "propertyPathMatches": {
+     *            "matchType": "oneOfSelected",
+     *            "matchExpression": [
+     *              "other"
+     *            ]
+     *          }
+     *          "propertyPathIsRelative":true
+     *       }
+
      * This will test an array of strings, defined elsewhere, to see if any items in the array have value "other".
      */
     if (schema.requiredIf) {
@@ -90,7 +115,8 @@ JSONEditor.Validator = Class.extend({
       //  schema.requiredIf.propertyPath
       if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
         // what type is this value?
-        var propValue = this.getPropByString(fullSchemaValue, schema.requiredIf.propertyPath);
+        var propPathIsRelative = schema.requiredIf.propertyPathIsRelative;
+        var propValue = this.getPropByString(fullSchemaValue, schema.requiredIf.propertyPath, propPathIsRelative, path);
         var type = (typeof propValue);
         if (type) {
           // what type is specified in the cross-reference? Note this is a JAVASCRIPT type, or RegExp.
