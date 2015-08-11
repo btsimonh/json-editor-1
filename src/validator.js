@@ -17,6 +17,7 @@ JSONEditor.Validator = Class.extend({
    * @returns the value of the property, if it is found.
    */
   getPropByString: function (obj, propString, isRelativePropertyPath, propertyPathContext) {
+    var i, iLen;
     //TODO: get the last 2 parameters to work.
     if (!propString)
       return obj;
@@ -26,7 +27,7 @@ JSONEditor.Validator = Class.extend({
         parts = propString.split("/");
       stack.pop(); // remove current file name (or empty string)
                    // (omit if "base" is the current folder without trailing slash)
-      for (var i = 0; i < parts.length; i++) {
+      for (i = 0; i < parts.length; i++) {
         if (parts[i] == ".")
           continue;
         if (parts[i] == "..")
@@ -44,7 +45,7 @@ JSONEditor.Validator = Class.extend({
     // get the target property from obj, based on the path provided by propString.
     var prop, props = propString.split('.');
 
-    for (var i = 0, iLen = props.length - 1; i < iLen; i++) {
+    for (iLen = props.length - 1, i = 0; i < iLen; i++) {
       prop = props[i];
 
       var candidate = obj[prop];

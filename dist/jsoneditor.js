@@ -794,6 +794,7 @@ JSONEditor.Validator = Class.extend({
    * @returns the value of the property, if it is found.
    */
   getPropByString: function (obj, propString, isRelativePropertyPath, propertyPathContext) {
+    var i, iLen;
     //TODO: get the last 2 parameters to work.
     if (!propString)
       return obj;
@@ -803,7 +804,7 @@ JSONEditor.Validator = Class.extend({
         parts = propString.split("/");
       stack.pop(); // remove current file name (or empty string)
                    // (omit if "base" is the current folder without trailing slash)
-      for (var i = 0; i < parts.length; i++) {
+      for (i = 0; i < parts.length; i++) {
         if (parts[i] == ".")
           continue;
         if (parts[i] == "..")
@@ -821,7 +822,7 @@ JSONEditor.Validator = Class.extend({
     // get the target property from obj, based on the path provided by propString.
     var prop, props = propString.split('.');
 
-    for (var i = 0, iLen = props.length - 1; i < iLen; i++) {
+    for (iLen = props.length - 1, i = 0; i < iLen; i++) {
       prop = props[i];
 
       var candidate = obj[prop];
@@ -2591,15 +2592,30 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
 });
 
 JSONEditor.defaults.editors.number = JSONEditor.defaults.editors.string.extend({
-  sanitize: function(value) {
-    return (value+"").replace(/[^0-9\.\-eE]/g,'');
-  },
-  getNumColumns: function() {
-    return 2;
-  },
-  getValue: function() {
-    return this.value*1;
-  }
+    sanitize: function (value) {
+        return (value + "").replace(/[^0-9\.\-eE]/g, '');
+    },
+    getNumColumns: function () {
+        return 2;
+    },
+    getValue: function () {
+        return this.value * 1;
+    },
+    build: function () {
+        this._super();
+        var self = this;
+
+        var eventName = 'focus'; // use onchange for select events, onclick for checkbox
+        this.input.addEventListener(eventName, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            //When a numeric input is given focus, select all so new values don't prefix the redundant 0, default value
+            if (self.schema.format === "number") {
+                self.input.select();
+            }
+        });
+
+    }
 });
 
 JSONEditor.defaults.editors.integer = JSONEditor.defaults.editors.number.extend({
@@ -4130,7 +4146,8 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       title: schema.title || "item",
       'default': schema.default,
       width: 12,
-      child_editors: schema.properties || schema.items
+      child_editors: schema.properties || schema.items,
+      title_counter_offset: schema.title_counter_offset || 0
     };
     
     return this.item_info[stringified];
@@ -4139,8 +4156,11 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
     var item_info = this.getItemInfo(i);
     var schema = this.getItemSchema(i);
     schema = this.jsoneditor.expandRefs(schema);
-    schema.title = item_info.title+' '+(i+1);
-
+    if (item_info.title_counter_offset) {
+      schema.title = item_info.title+' '+(i+1+item_info.title_counter_offset);
+    } else {
+      schema.title = item_info.title+' '+(i+1);
+    }
     var editor = this.jsoneditor.getEditorClass(schema);
 
     var holder;
