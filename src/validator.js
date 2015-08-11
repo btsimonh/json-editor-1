@@ -6,13 +6,13 @@ JSONEditor.Validator = Class.extend({
     this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
   },
   /**
-   * 
+   *
    * @param {object} obj - the object from which to get the value
-   * @param {string} propString - a property string that describes the path to 
+   * @param {string} propString - a property string that describes the path to
    * the object's property value that we are interested in, separated by dots
-   * @param {boolean} isRelativePropertyPath - true if the propString should be 
+   * @param {boolean} isRelativePropertyPath - true if the propString should be
    * treated as relative
-   * @param {string} propertyPathContext - the current context from which 
+   * @param {string} propertyPathContext - the current context from which
    * relative property paths should be calculated
    * @returns the value of the property, if it is found.
    */
@@ -21,6 +21,27 @@ JSONEditor.Validator = Class.extend({
     if (!propString)
       return obj;
 
+    if (isRelativePropertyPath) {
+      var stack = propertyPathContext.split("."),
+        parts = propString.split("/");
+      stack.pop(); // remove current file name (or empty string)
+                   // (omit if "base" is the current folder without trailing slash)
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i] == ".")
+          continue;
+        if (parts[i] == "..")
+          stack.pop();
+        else
+          stack.push(parts[i]);
+      }
+      // get rid of the first item in stack if it is "root"
+      var firstItem = stack.shift();
+      if (firstItem !== "root") {
+        stack.unshift(firstItem); // put it back again, it wasn't what we expected.
+      }
+      propString = stack.join("."); // overrides the function parameter with our newly-calculated absolute property string
+    }
+    // get the target property from obj, based on the path provided by propString.
     var prop, props = propString.split('.');
 
     for (var i = 0, iLen = props.length - 1; i < iLen; i++) {
@@ -77,10 +98,10 @@ JSONEditor.Validator = Class.extend({
      *        "title": "Reason for liking cheese"
      *      }
      *    }
-     *    
+     *
      * In this case, "Cheese Details" is required only if Cheese is "yes", otherwise
      *  it is hidden and disabled.
-     *  
+     *
      *  Or, to test for a particular value in an array property:
      *        "requiredIf": {
      *        "propertyPath": "operation_type-7",
@@ -90,8 +111,8 @@ JSONEditor.Validator = Class.extend({
      *            "other"
      *          ]
      *        }
-     *        
-     *  To test for a particular value using a relative path 
+     *
+     *  To test for a particular value using a relative path
      *  (works with other matchTypes):
      *        "requiredIf": {
      *          "propertyPath": "../operation_type-7",
@@ -100,7 +121,7 @@ JSONEditor.Validator = Class.extend({
      *            "matchExpression": [
      *              "other"
      *            ]
-     *          }
+     *          },
      *          "propertyPathIsRelative":true
      *       }
 
@@ -111,7 +132,7 @@ JSONEditor.Validator = Class.extend({
               valueMatch = false, // start by assuming the values DONT match
               showThisField = false; // start by assuming this field should be hidden
 
-      // we have a cross-reference requirement. Check the value of the associated path.
+      // we have a cross-reference requirement. Check the value of the associated path. 
       //  schema.requiredIf.propertyPath
       if (fullSchemaValue && schema.requiredIf.propertyPath) { // make sure we have the full schema's value to validate against
         // what type is this value?
