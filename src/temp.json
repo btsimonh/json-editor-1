@@ -1,0 +1,47 @@
+{
+  "fullSchemaValue": {
+    "patientID": "FSHadmin1",
+    "studyEntry": "",
+    "initial_bleeding_treatment-1": {
+      "therapy-2": "",
+      "ffp_dose-3": 0,
+      "prothrombinex_dose-4": 0,
+      "5_minute_swab_weight-5": 0,
+      "initial_test_battery-3": {
+        "fbc-1": {
+          "done-2": "",
+          "hb-3": 0,
+          "platelet_count-4": 0
+        },
+        "abg-5": {
+          "done-6": "",
+          "ph-7": 0,
+          "be-8": 0,
+          "lactate-9": 0
+        },
+        "cat-10": {
+          "done-12": "",
+          "ptp-13": 0,
+          "etp-14": 0
+        },
+        "coags-15": {
+          "done-16": "",
+          "inr-17": 0,
+          "aptt-18": 0,
+          "fibrinogen-19": 0
+        }
+      }
+    },
+    "treatment_set-5": []
+  },
+  "path": "root.initial_bleeding_treatment-1.ffp_dose-3",
+  "schema.requiredIf": {
+    "propertyPath": "initial_bleeding_treatment-1.therapy-2",
+    "propertyPathMatches": {
+      "matchType": "string",
+      "matchExpression": "FFP"
+    },
+    "hideOtherwise": true,
+    "disableOtherwise": true
+  }
+}

@@ -163,228 +163,230 @@ editor.on("change",  function() {
         // Default starting schema
         if (!schema) {
           schema = {
-    "form_id": 1,
-    "type": "object",
-    "title": "Inclusion / Exclusion Data",
-    "formNumber": "FM000-02",
-    "properties": {
-      "patientID": {
-        "type": "string",
-        "title": "Patient ID",
-        "format": "string",
-        "default": "currentPatientID",
-        "readonly": true
-      },
-      "bleeding_diathesis-2": {
-        "field_type": "radio",
-        "demoTemplateUrl": "./views/directive-templates/field/radio.html",
-        "editTemplateUrl": "./views/directive-templates/edit/options.html",
-        "name": "Multiple Choice",
-        "show": true,
-        "displayOrder": 21,
-        "icon": "circle-o",
-        "field_id": "bleeding_diathesis-2",
-        "title": "Bleeding diathesis",
-        "type": "radio",
-        "format": "radio",
-        "description": "",
-        "required": true,
-        "default": "",
-        "field_options": [
-          {
-            "option_id": 1,
-            "option_value": "Yes"
-          },
-          {
-            "option_id": 2,
-            "option_value": "No"
-          }
-        ],
-        "enum": [
-          "Yes",
-          "No"
-        ],
-        "id": 2
-      },
-      "type_of_problem-1": {
-        "field_type": "textfield",
-        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
-        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
-        "name": "Text",
-        "show": true,
-        "displayOrder": 1,
-        "icon": "font",
-        "field_id": "type_of_problem-1",
-        "title": "Type of Problem",
-        "type": "string",
-        "format": "text",
-        "description": "",
-        "required": true,
-        "default": "",
-        "id": 1,
-        "requiredIf": {
-          "propertyPath": "bleeding_diathesis-2",
-          "propertyPathMatches": {
-            "matchType": "string",
-            "matchExpression": "Yes"
-          },
-          "hideOtherwise": true,
-          "disableOtherwise": true
-        }
-      },
-      "ffp_or_prothrombinex_in_5_days_preop-3": {
-        "field_type": "radio",
-        "demoTemplateUrl": "./views/directive-templates/field/radio.html",
-        "editTemplateUrl": "./views/directive-templates/edit/options.html",
-        "name": "Multiple Choice",
-        "show": true,
-        "displayOrder": 21,
-        "icon": "circle-o",
-        "field_id": "ffp_or_prothrombinex_in_5_days_preop-3",
-        "title": "FFP or Prothrombinex in 5 days preop?",
-        "type": "radio",
-        "format": "radio",
-        "description": "",
-        "required": true,
-        "default": "",
-        "field_options": [
-          {
-            "option_id": 1,
-            "option_value": "Yes"
-          },
-          {
-            "option_id": 2,
-            "option_value": "No"
-          }
-        ],
-        "enum": [
-          "Yes",
-          "No"
-        ],
-        "id": 3
-      },
-      "last_clopidogrelprasugrelticlodipine-4": {
-        "field_type": "textfield",
-        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
-        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
-        "name": "Text",
-        "show": true,
-        "displayOrder": 1,
-        "icon": "font",
-        "field_id": "last_clopidogrelprasugrelticlodipine-4",
-        "title": "Last Clopidogrel/Prasugrel/Ticlodipine",
-        "type": "string",
-        "format": "text",
-        "description": "Number of days ago",
-        "default": "",
-        "id": 4
-      },
-      "last_aspirin-5": {
-        "field_type": "textfield",
-        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
-        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
-        "name": "Text",
-        "show": true,
-        "displayOrder": 1,
-        "icon": "font",
-        "field_id": "last_aspirin-5",
-        "title": "Last Aspirin",
-        "type": "string",
-        "format": "text",
-        "description": "Number of days ago",
-        "default": "",
-        "id": 5
-      },
-      "operation_type-7": {
-        "field_type": "dropdown",
-        "demoTemplateUrl": "./views/directive-templates/field/dropdown.html",
-        "editTemplateUrl": "./views/directive-templates/edit/options.html",
-        "name": "Dropdown",
-        "show": true,
-        "displayOrder": 22,
-        "icon": "caret-down",
-        "field_id": "operation_type-7",
-        "title": "Operation Type",
-        "description": "Select all that apply",
-        "type": "array",
-        "format": "select",
-        "required": true,
-        "multiple": true,
-        "default": [],
-        "field_options": [
-          {
-            "option_id": 1,
-            "option_value": "heart transplant"
-          },
-          {
-            "option_id": 2,
-            "option_value": "lung transplant"
-          },
-          {
-            "option_id": 3,
-            "option_value": "cabg"
-          },
-          {
-            "option_id": 4,
-            "option_value": "valve"
-          },
-          {
-            "option_id": 5,
-            "option_value": "aortic root"
-          },
-          {
-            "option_id": 6,
-            "option_value": "aortic arch"
-          },
-          {
-            "option_id": 7,
-            "option_value": "aortic dissection"
-          },
-          {
-            "option_id": 8,
-            "option_value": "other"
-          }
-        ],
-        "enum": [
-          "heart transplant",
-          "lung transplant",
-          "cabg",
-          "valve",
-          "aortic root",
-          "aortic arch",
-          "aortic dissection",
-          "other"
-        ],
-        "id": 7
-      },
-      "type_of_operation-1": {
-        "field_type": "textfield",
-        "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
-        "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
-        "name": "Text",
-        "show": true,
-        "displayOrder": 1,
-        "icon": "font",
-        "field_id": "type_of_operation-1",
-        "title": "Type of Operation",
-        "type": "string",
-        "format": "text",
-        "description": "",
-        "default": "",
-        "id": 1,
-        "requiredIf": {
-          "propertyPath": "operation_type-7",
-          "propertyPathMatches": {
-            "matchType": "oneOfSelected",
-            "matchExpression": ["other"]
-          },
-          "hideOtherwise": true,
-          "disableOtherwise": true
-        }
-      }
-
-    }
-  };
+              "form_id": 1,
+              "type": "object",
+              "title": "Inclusion / Exclusion Data",
+              "formNumber": "FM000-02",
+              "properties": {
+                  "patientID": {
+                      "type": "string",
+                      "title": "Patient ID",
+                      "format": "string",
+                      "default": "currentPatientID",
+                      "readonly": true
+                  },
+                  "bleeding_diathesis-2": {
+                      "field_type": "radio",
+                      "demoTemplateUrl": "./views/directive-templates/field/radio.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/options.html",
+                      "name": "Multiple Choice",
+                      "show": true,
+                      "displayOrder": 21,
+                      "icon": "circle-o",
+                      "field_id": "bleeding_diathesis-2",
+                      "title": "Bleeding diathesis",
+                      "type": "radio",
+                      "format": "radio",
+                      "description": "",
+                      "required": true,
+                      "default": "",
+                      "field_options": [
+                          {
+                              "option_id": 1,
+                              "option_value": "Yes"
+                          },
+                          {
+                              "option_id": 2,
+                              "option_value": "No"
+                          }
+                      ],
+                      "enum": [
+                          "Yes",
+                          "No"
+                      ],
+                      "id": 2
+                  },
+                  "type_of_problem-1": {
+                      "field_type": "textfield",
+                      "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+                      "name": "Text",
+                      "show": true,
+                      "displayOrder": 1,
+                      "icon": "font",
+                      "field_id": "type_of_problem-1",
+                      "title": "Type of Problem",
+                      "type": "string",
+                      "format": "text",
+                      "description": "",
+                      "required": true,
+                      "default": "",
+                      "id": 1,
+                      "requiredIf": {
+                          "propertyPath": "bleeding_diathesis-2",
+                          "propertyPathMatches": {
+                              "matchType": "string",
+                              "matchExpression": "Yes"
+                          },
+                          "hideOtherwise": true,
+                          "disableOtherwise": true
+                      }
+                  },
+                  "ffp_or_prothrombinex_in_5_days_preop-3": {
+                      "field_type": "radio",
+                      "demoTemplateUrl": "./views/directive-templates/field/radio.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/options.html",
+                      "name": "Multiple Choice",
+                      "show": true,
+                      "displayOrder": 21,
+                      "icon": "circle-o",
+                      "field_id": "ffp_or_prothrombinex_in_5_days_preop-3",
+                      "title": "FFP or Prothrombinex in 5 days preop?",
+                      "type": "radio",
+                      "format": "radio",
+                      "description": "",
+                      "required": true,
+                      "default": "",
+                      "field_options": [
+                          {
+                              "option_id": 1,
+                              "option_value": "Yes"
+                          },
+                          {
+                              "option_id": 2,
+                              "option_value": "No"
+                          }
+                      ],
+                      "enum": [
+                          "Yes",
+                          "No"
+                      ],
+                      "id": 3
+                  },
+                  "last_clopidogrelprasugrelticlodipine-4": {
+                      "field_type": "textfield",
+                      "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+                      "name": "Text",
+                      "show": true,
+                      "displayOrder": 1,
+                      "icon": "font",
+                      "field_id": "last_clopidogrelprasugrelticlodipine-4",
+                      "title": "Last Clopidogrel/Prasugrel/Ticlodipine",
+                      "type": "string",
+                      "format": "text",
+                      "description": "Number of days ago",
+                      "default": "",
+                      "id": 4
+                  },
+                  "last_aspirin-5": {
+                      "field_type": "textfield",
+                      "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+                      "name": "Text",
+                      "show": true,
+                      "displayOrder": 1,
+                      "icon": "font",
+                      "field_id": "last_aspirin-5",
+                      "title": "Last Aspirin",
+                      "type": "string",
+                      "format": "text",
+                      "description": "Number of days ago",
+                      "default": "",
+                      "id": 5
+                  },
+                  "operation_type-7": {
+                      "field_type": "dropdown",
+                      "demoTemplateUrl": "./views/directive-templates/field/dropdown.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/options.html",
+                      "name": "Dropdown",
+                      "show": true,
+                      "displayOrder": 22,
+                      "icon": "caret-down",
+                      "field_id": "operation_type-7",
+                      "title": "Operation Type",
+                      "description": "Select all that apply",
+                      "type": "array",
+                      "format": "select",
+                      "required": true,
+                      "multiple": true,
+                      "default": [],
+                      "field_options": [
+                          {
+                              "option_id": 1,
+                              "option_value": "heart transplant"
+                          },
+                          {
+                              "option_id": 2,
+                              "option_value": "lung transplant"
+                          },
+                          {
+                              "option_id": 3,
+                              "option_value": "cabg"
+                          },
+                          {
+                              "option_id": 4,
+                              "option_value": "valve"
+                          },
+                          {
+                              "option_id": 5,
+                              "option_value": "aortic root"
+                          },
+                          {
+                              "option_id": 6,
+                              "option_value": "aortic arch"
+                          },
+                          {
+                              "option_id": 7,
+                              "option_value": "aortic dissection"
+                          },
+                          {
+                              "option_id": 8,
+                              "option_value": "other"
+                          }
+                      ],
+                      "enum": [
+                          "heart transplant",
+                          "lung transplant",
+                          "cabg",
+                          "valve",
+                          "aortic root",
+                          "aortic arch",
+                          "aortic dissection",
+                          "other"
+                      ],
+                      "id": 7
+                  },
+                  "type_of_operation-1": {
+                      "field_type": "textfield",
+                      "demoTemplateUrl": " ./views/directive-templates/field/normal-text.html",
+                      "editTemplateUrl": "./views/directive-templates/edit/normal-text.html",
+                      "name": "Text",
+                      "show": true,
+                      "displayOrder": 1,
+                      "icon": "font",
+                      "field_id": "type_of_operation-1",
+                      "title": "Type of Operation",
+                      "type": "string",
+                      "format": "text",
+                      "description": "",
+                      "default": "",
+                      "id": 1,
+                      "requiredIf": {
+                          "propertyPath": "./operation_type-7",
+                          "propertyPathMatches": {
+                              "matchType": "oneOfSelected",
+                              "matchExpression": [
+                                  "other"
+                              ]
+                          },
+                          "propertyPathIsRelative": true,
+                          "hideOtherwise": true,
+                          "disableOtherwise": true
+                      }
+                  }
+              }
+          };
         }
 
         // Divs/textareas on the page
