@@ -4594,6 +4594,10 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       self.active_tab = self.rows[i].tab;
       self.refreshTabs();
       self.refreshValue();
+      // Custom callback when the user hits the "add item" button.
+      if (self.schema.arrayAddCallback && (typeof self.schema.arrayAddCallback === "function")) {
+        self.schema.arrayAddCallback(self.rows);
+      }       
       self.onChange(true);
     });
     self.controls.appendChild(this.add_row_button);
