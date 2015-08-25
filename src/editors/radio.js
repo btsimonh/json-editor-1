@@ -122,7 +122,7 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
       self.onInputChange();
     });
 
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description,this.schema.info);
     this.container.appendChild(this.control);
 
     this.value = this.schema.default;

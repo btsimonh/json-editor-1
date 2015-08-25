@@ -23,6 +23,23 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     if(value === this.serialized) return;
 
     // Sanitize value before setting it
+
+    if (this.schema.linkRouteIfUndefined) {
+      if (!value) {
+        // override the input field with a link
+        this.input = document.createElement("A");
+        this.input.href = this.schema.linkRouteIfUndefined;
+        var linkTextNode = document.createTextNode(this.schema.linkTextIfUndefined);
+        this.input.appendChild(linkTextNode);
+      } else {
+        var parentNode = this.input.parentNode;
+        parentNode.removeChild(this.input);
+        this.input = document.createElement("INPUT");
+        this.input.disabled = true;
+        parentNode.appendChild(this.input);
+      }
+    }
+
     var sanitized = this.sanitize(value);
 
     if(this.input.value === sanitized) {
@@ -328,7 +345,15 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       // override the input field with an empty span
       this.input = document.createElement("SPAN");
     }
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    if (this.schema.linkRouteIfUndefined) {
+      // override the input field with a link
+      this.input = document.createElement("A");
+      this.input.href=this.schema.linkRouteIfUndefined;
+      var linkTextNode = document.createTextNode(this.schema.linkTextIfUndefined);
+      this.input.appendChild(linkTextNode);
+    }
+
+    this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema.info);
     this.container.appendChild(this.control);
 
     // Any special formatting that needs to happen after the input is added to the dom

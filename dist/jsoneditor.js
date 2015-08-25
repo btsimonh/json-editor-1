@@ -2092,6 +2092,23 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     if(value === this.serialized) return;
 
     // Sanitize value before setting it
+
+    if (this.schema.linkRouteIfUndefined) {
+      if (!value) {
+        // override the input field with a link
+        this.input = document.createElement("A");
+        this.input.href = this.schema.linkRouteIfUndefined;
+        var linkTextNode = document.createTextNode(this.schema.linkTextIfUndefined);
+        this.input.appendChild(linkTextNode);
+      } else {
+        var parentNode = this.input.parentNode;
+        parentNode.removeChild(this.input);
+        this.input = document.createElement("INPUT");
+        this.input.disabled = true;
+        parentNode.appendChild(this.input);
+      }
+    }
+
     var sanitized = this.sanitize(value);
 
     if(this.input.value === sanitized) {
@@ -2397,7 +2414,15 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       // override the input field with an empty span
       this.input = document.createElement("SPAN");
     }
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    if (this.schema.linkRouteIfUndefined) {
+      // override the input field with a link
+      this.input = document.createElement("A");
+      this.input.href=this.schema.linkRouteIfUndefined;
+      var linkTextNode = document.createTextNode(this.schema.linkTextIfUndefined);
+      this.input.appendChild(linkTextNode);
+    }
+
+    this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema.info);
     this.container.appendChild(this.control);
 
     // Any special formatting that needs to happen after the input is added to the dom
@@ -3163,7 +3188,7 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
     labelText = this.schema.properties[key].title ? this.schema.properties[key].title : key;
     label = self.theme.getCheckboxLabel(labelText);
 
-    control = self.theme.getFormControl(label,checkbox);
+    control = self.theme.getFormControl(label,checkbox,null,this.schema.info);
     control.style.paddingBottom = control.style.marginBottom = control.style.paddingTop = control.style.marginTop = 0;
     control.style.height = 'auto';
     //control.style.overflowY = 'hidden';
@@ -3788,7 +3813,7 @@ JSONEditor.defaults.editors.imageFile = JSONEditor.AbstractEditor.extend({
     if (this.format)
       this.input.setAttribute('data-schemaformat', this.format);
 
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema);
     this.container.appendChild(this.control);
 
     // If the Select2 library is loaded
@@ -4594,6 +4619,10 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       self.active_tab = self.rows[i].tab;
       self.refreshTabs();
       self.refreshValue();
+      // Custom callback when the user hits the "add item" button.
+      if (self.schema.arrayAddCallback && (typeof self.schema.arrayAddCallback === "function")) {
+        self.schema.arrayAddCallback(self.rows);
+      }       
       self.onChange(true);
     });
     self.controls.appendChild(this.add_row_button);
@@ -5880,7 +5909,7 @@ JSONEditor.defaults.editors.select = JSONEditor.AbstractEditor.extend({
       self.onInputChange();
     });
 
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema.info);
     this.container.appendChild(this.control);
 
     this.value = this.enum_values[0];
@@ -6208,7 +6237,7 @@ JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.select.extend({
       self.onInputChange();
     });
 
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+    this.control = this.theme.getFormControl(this.label, this.input, this.description,this.schema.info);
     this.container.appendChild(this.control);
 
     this.value = this.schema.default;
@@ -6322,7 +6351,7 @@ JSONEditor.defaults.editors.multiselect = JSONEditor.AbstractEditor.extend({
         this.input.disabled = true;
       }
 
-      this.control = this.theme.getFormControl(this.label, this.input, this.description);
+      this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema.info);
     }
 
     this.container.appendChild(this.control);
@@ -7381,7 +7410,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     }
     return el;
   },
-  getFormControl: function(label, input, description) {
+  getFormControl: function(label, input, description, info) {
     var group = document.createElement('div');
 
     if(label && input.getAttribute('type') === 'checkbox') {
@@ -7398,15 +7427,32 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     else {
       group.className += ' form-group';
       if(label) {
+        var labelHolder = document.createElement("div");
+        labelHolder.setAttribute("class","jutoLabelHolder");
         label.className += ' control-label';
-        group.appendChild(label);
+        if (info) {
+          var infoSpan = document.createElement("i");
+          infoSpan.setAttribute("class", "fa fa-info jutoInfoLabel");
+          infoSpan.info = info;
+          labelHolder.appendChild(label);
+          labelHolder.appendChild(infoSpan);
+        } else {
+          labelHolder.appendChild(label);
+        }
+        group.appendChild(labelHolder);
       }
       group.appendChild(input);
     }
 
+
+
     if(description) group.appendChild(description);
 
     return group;
+  },
+  getFormInputLabel: function(text) {
+    var labelToReturn = this._super(text);
+    return labelToReturn;
   },
   // <div class="btn-group" data-toggle="buttons">
   //  <label class="btn btn-primary active">
