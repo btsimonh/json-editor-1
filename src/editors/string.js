@@ -352,7 +352,8 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       var linkTextNode = document.createTextNode(this.schema.linkTextIfUndefined);
       this.input.appendChild(linkTextNode);
     }
-    this.control = this.theme.getFormControl(this.label, this.input, this.description);
+
+    this.control = this.theme.getFormControl(this.label, this.input, this.description, this.schema.info);
     this.container.appendChild(this.control);
 
     // Any special formatting that needs to happen after the input is added to the dom

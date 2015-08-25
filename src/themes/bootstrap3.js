@@ -33,7 +33,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     }
     return el;
   },
-  getFormControl: function(label, input, description) {
+  getFormControl: function(label, input, description, info) {
     var group = document.createElement('div');
 
     if(label && input.getAttribute('type') === 'checkbox') {
@@ -50,15 +50,32 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     else {
       group.className += ' form-group';
       if(label) {
+        var labelHolder = document.createElement("div");
+        labelHolder.setAttribute("class","jutoLabelHolder");
         label.className += ' control-label';
-        group.appendChild(label);
+        if (info) {
+          var infoSpan = document.createElement("i");
+          infoSpan.setAttribute("class", "fa fa-info jutoInfoLabel");
+          infoSpan.info = info;
+          labelHolder.appendChild(label);
+          labelHolder.appendChild(infoSpan);
+        } else {
+          labelHolder.appendChild(label);
+        }
+        group.appendChild(labelHolder);
       }
       group.appendChild(input);
     }
 
+
+
     if(description) group.appendChild(description);
 
     return group;
+  },
+  getFormInputLabel: function(text) {
+    var labelToReturn = this._super(text);
+    return labelToReturn;
   },
   // <div class="btn-group" data-toggle="buttons">
   //  <label class="btn btn-primary active">

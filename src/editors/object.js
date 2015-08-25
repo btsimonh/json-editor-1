@@ -533,7 +533,7 @@ JSONEditor.defaults.editors.object = JSONEditor.AbstractEditor.extend({
     labelText = this.schema.properties[key].title ? this.schema.properties[key].title : key;
     label = self.theme.getCheckboxLabel(labelText);
 
-    control = self.theme.getFormControl(label,checkbox);
+    control = self.theme.getFormControl(label,checkbox,null,this.schema.info);
     control.style.paddingBottom = control.style.marginBottom = control.style.paddingTop = control.style.marginTop = 0;
     control.style.height = 'auto';
     //control.style.overflowY = 'hidden';
