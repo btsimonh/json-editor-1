@@ -6,7 +6,7 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     return el;
   },
   setGridColumnSize: function(el,size) {
-    el.className = 'col-md-'+size;
+    el.className = el.className + ' col-md-'+size;
   },
   afterInputReady: function(input) {
     if(input.controlgroup) return;
