@@ -276,6 +276,11 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
         
         this.input = this.theme.getTextareaInput();
       }
+      else if (this.format === "hidden") {
+        this.input_type = this.format;
+        this.input = this.theme.getFormInputField(this.input_type);
+        this.container.setAttribute('class',this.container.getAttribute('class')+' hidden')
+      }
       // HTML5 Input type
       else if (this.format !== "geolocation") {
         this.input_type = this.format;
