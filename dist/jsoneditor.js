@@ -2092,7 +2092,9 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
     if(value === this.serialized) return;
 
     // Sanitize value before setting it
-
+    // we can add a link to a route if the value is not defined:
+    //    "linkRouteIfUndefined": Router.path("euroSCORE"),
+    //    "linkTextIfUndefined": " Tap here to calculate",
     if (this.schema.linkRouteIfUndefined) {
       if (!value) {
         // override the input field with a link
@@ -2348,7 +2350,7 @@ JSONEditor.defaults.editors.string = JSONEditor.AbstractEditor.extend({
       else if (this.format === "hidden") {
         this.input_type = this.format;
         this.input = this.theme.getFormInputField(this.input_type);
-        this.container.setAttribute('class',this.container.getAttribute('class')+' hidden')
+        this.container.setAttribute('class',this.container.getAttribute('class')+' hidden');
       }
       // HTML5 Input type
       else if (this.format !== "geolocation") {
