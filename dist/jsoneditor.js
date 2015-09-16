@@ -1262,10 +1262,21 @@ JSONEditor.Validator = Class.extend({
        */
 
       // Number Specific Validation
-      if (typeof value === "number") {
+      if (typeof value === "number" || schema.format === "number") {
+        var valueToTest = value;
+        // the format is a number but the type isn't...
+        if (schema.format === "number" && typeof valueToTest !== "number") {
+          // perform a type conversion
+          // if value is empty, treat it as zero
+          if (valueToTest === "") {
+            valueToTest = 0;
+          } else {
+            valueToTest = 1 * valueToTest; // convert to a number
+          }
+        }
         // `multipleOf` and `divisibleBy`
         if (schema.multipleOf || schema.divisibleBy) {
-          valid = value / (schema.multipleOf || schema.divisibleBy);
+          valid = valueToTest / (schema.multipleOf || schema.divisibleBy);
           if (valid !== Math.floor(valid)) {
             errors.push({
               path: path,
@@ -1277,14 +1288,14 @@ JSONEditor.Validator = Class.extend({
 
         // `maximum`
         if (schema.hasOwnProperty('maximum')) {
-          if (schema.exclusiveMaximum && value >= schema.maximum) {
+          if (schema.exclusiveMaximum && valueToTest >= schema.maximum) {
             errors.push({
               path: path,
               property: 'maximum',
               message: this.translate('error_maximum_excl', [schema.maximum])
             });
           }
-          else if (!schema.exclusiveMaximum && value > schema.maximum) {
+          else if (!schema.exclusiveMaximum && valueToTest > schema.maximum) {
             errors.push({
               path: path,
               property: 'maximum',
@@ -1312,7 +1323,7 @@ JSONEditor.Validator = Class.extend({
         }
       }
       // String specific validation
-      else if (typeof value === "string") {
+      if (typeof value === "string") {
         // `maxLength`
         if (schema.maxLength) {
           if ((value + "").length > schema.maxLength) {
