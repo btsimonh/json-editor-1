@@ -1719,6 +1719,23 @@ JSONEditor.AbstractEditor = Class.extend({
           path_parts = [path[0]].concat(path[1].split('.'));
         }
         else {
+          // if the first character is a dot, the path is relative to the current path. Calculate it.
+          if (path.indexOf(".") === 0) {
+            // e.g. path      = "./fbc_sent";
+            //      self.path = "root.initial_bleeding_treatment-1.initial_test_battery-3.fbc_timestamp";
+            //      self.parent.path = "root.initial_bleeding_treatment-1.initial_test_battery-3"
+            var targetPathParts = self.parent.path.split("."); // the targeted item's path begins with the parent of this one
+            var relativePathParts = path.split("/"); //
+            for (i = 0; i < relativePathParts.length; i++) { // loop through parts of the relative path
+              if (relativePathParts[i] == ".") // single dot means stay at this level
+                continue;
+              if (relativePathParts[i] == "..") // double dot means go up one level (remove one from the parent path)
+                targetPathParts.pop();
+              else // not single-dot or double-dot means add the item to the path
+                targetPathParts.push(relativePathParts[i]);
+            }
+            path = targetPathParts.join(".");
+          }
           path_parts = path.split('.');
           if(!self.theme.closest(self.container,'[data-schemaid="'+path_parts[0]+'"]')) path_parts.unshift('#');
         }
